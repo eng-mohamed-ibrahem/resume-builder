@@ -143,7 +143,7 @@ class _AtsSection extends StatelessWidget {
                     proj.name,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  Text(proj.description),
+                  if (proj.description.isNotEmpty) Text(proj.description),
                   ...proj.descriptionPoints.map((p) => Text('• $p')),
                   if (proj.links.isNotEmpty)
                     Text(
@@ -392,11 +392,13 @@ class _StandardSection extends StatelessWidget {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      proj.description,
-                      style: const TextStyle(fontSize: 13, height: 1.4),
-                    ),
+                    if (proj.description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        proj.description,
+                        style: const TextStyle(fontSize: 13, height: 1.4),
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     ...proj.descriptionPoints.map(
                       (p) => Padding(

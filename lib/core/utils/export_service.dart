@@ -31,7 +31,11 @@ class ExportService {
       ),
     );
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    final bytes = await pdf.save();
+    await Printing.sharePdf(
+      bytes: bytes,
+      filename: '${resume.title.isNotEmpty ? resume.title : 'Resume'}.pdf',
+    );
   }
 
   static pw.Widget _buildPdfSection(SectionModel section, bool isAtsView) {
@@ -57,7 +61,8 @@ class ExportService {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.center,
               children: [
-                if (d.email.isNotEmpty) _contactItem(d.email),
+                if (d.email.isNotEmpty)
+                  _contactItem(d.email, url: 'mailto:${d.email}'),
                 if (d.phoneNumber.isNotEmpty) _contactItem(d.phoneNumber),
                 if (d.location.isNotEmpty) _contactItem(d.location),
               ],
@@ -68,9 +73,12 @@ class ExportService {
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 children: [
-                  if (d.website.isNotEmpty) _contactItem(d.website),
-                  if (d.linkedin.isNotEmpty) _contactItem(d.linkedin),
-                  if (d.github.isNotEmpty) _contactItem(d.github),
+                  if (d.website.isNotEmpty)
+                    _contactItem(d.website, url: d.website),
+                  if (d.linkedin.isNotEmpty)
+                    _contactItem(d.linkedin, url: d.linkedin),
+                  if (d.github.isNotEmpty)
+                    _contactItem(d.github, url: d.github),
                 ],
               ),
             pw.SizedBox(height: 8),
@@ -139,26 +147,12 @@ class ExportService {
                     ...exp.descriptionPoints.map(
                       (p) => pw.Padding(
                         padding: const pw.EdgeInsets.only(bottom: 2),
-                        child: pw.Row(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(
-                              '• ',
-                              style: pw.TextStyle(
-                                fontSize: 10,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
-                            ),
-                            pw.Expanded(
-                              child: pw.Text(
-                                p,
-                                style: const pw.TextStyle(
-                                  fontSize: 10,
-                                  lineSpacing: 1.1,
-                                ),
-                              ),
-                            ),
-                          ],
+                        child: pw.Text(
+                          p,
+                          style: const pw.TextStyle(
+                            fontSize: 10,
+                            lineSpacing: 1.1,
+                          ),
                         ),
                       ),
                     ),
@@ -188,48 +182,45 @@ class ExportService {
                             fontSize: 11,
                           ),
                         ),
-                        if (proj.links.isNotEmpty)
-                          pw.Text(
-                            ' (${proj.links.map((l) => l.label).join(" | ")})',
-                            style: pw.TextStyle(
-                              fontSize: 10,
-                              color: PdfColors.blue800,
-                            ),
+                        if (proj.links.isNotEmpty) ...[
+                          pw.SizedBox(width: 4),
+                          pw.Row(
+                            children: proj.links.map((l) {
+                              return pw.Padding(
+                                padding: const pw.EdgeInsets.only(left: 4),
+                                child: pw.UrlLink(
+                                  destination: l.url,
+                                  child: pw.Text(
+                                    l.label,
+                                    style: pw.TextStyle(
+                                      fontSize: 10,
+                                      color: PdfColors.blue800,
+                                      decoration: pw.TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
                           ),
+                        ],
                       ],
                     ),
+                    if (proj.description.isNotEmpty) ...[
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        proj.description,
+                        style: const pw.TextStyle(fontSize: 10),
+                      ),
+                    ],
                     pw.SizedBox(height: 2),
-                    pw.Text(
-                      proj.description,
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                    pw.SizedBox(height: 2),
-                    ...proj.descriptionPoints.map(
-                      (p) => pw.Padding(
-                        padding: const pw.EdgeInsets.only(bottom: 2),
-                        child: pw.Row(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(
-                              '• ',
-                              style: pw.TextStyle(
-                                fontSize: 10,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
-                            ),
-                            pw.Expanded(
-                              child: pw.Text(
-                                p,
-                                style: const pw.TextStyle(
-                                  fontSize: 10,
-                                  lineSpacing: 1.1,
-                                ),
-                              ),
-                            ),
-                          ],
+                    if (proj.descriptionPoints.isNotEmpty)
+                      pw.Text(
+                        proj.descriptionPoints.join(', '),
+                        style: const pw.TextStyle(
+                          fontSize: 10,
+                          lineSpacing: 1.1,
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -287,7 +278,7 @@ class ExportService {
           children: [
             _sectionTitle(section.title, isAtsView),
             pw.Text(
-              (section.skillData ?? []).map((s) => s.name).join(' / '),
+              (section.skillData ?? []).map((s) => s.name).join(', '),
               style: const pw.TextStyle(fontSize: 10),
             ),
             pw.SizedBox(height: 15),
@@ -300,7 +291,7 @@ class ExportService {
           children: [
             _sectionTitle(section.title, isAtsView),
             pw.Text(
-              (section.listData ?? []).join(' • '),
+              (section.listData ?? []).join(', '),
               style: const pw.TextStyle(fontSize: 10),
             ),
             pw.SizedBox(height: 15),
@@ -325,10 +316,22 @@ class ExportService {
     );
   }
 
-  static pw.Widget _contactItem(String text) {
+  static pw.Widget _contactItem(String text, {String? url}) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(horizontal: 5),
-      child: pw.Text(text, style: const pw.TextStyle(fontSize: 9)),
+      child: url != null
+          ? pw.UrlLink(
+              destination: url,
+              child: pw.Text(
+                text,
+                style: const pw.TextStyle(
+                  fontSize: 9,
+                  color: PdfColors.blue800,
+                  decoration: pw.TextDecoration.underline,
+                ),
+              ),
+            )
+          : pw.Text(text, style: const pw.TextStyle(fontSize: 9)),
     );
   }
 }
