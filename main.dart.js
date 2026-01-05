@@ -99011,7 +99011,9 @@ o=c.c
 if(o!=null)l.j(0,"Authorization","Bearer "+A.l(o))
 n=c.f
 if(n==null){o=t.N
-n=A.q(o,o)}m=A.d3(a,0,null)
+n=A.q(o,o)}o=c.d
+if(o!=null){o.toString
+n.j(0,"redirect_to",o)}m=A.d3(a,0,null)
 o=A.dg(m.gj6(),t.N,t.z)
 o.K(0,n)
 s=3
@@ -99108,9 +99110,9 @@ A.aiC.prototype={}
 A.aiD.prototype={
 gv3(){var s=this.r
 return s===$?this.r=new A.TX(this.f):s},
-xy(a,b,c){return this.abw(a,b,c)},
-abw(a,b,c){var s=0,r=A.y(t.W8),q,p=this,o,n,m,l,k,j,i,h,g
-var $async$xy=A.u(function(d,e){if(d===1)return A.v(e,r)
+xy(a,b,c,d){return this.abw(a,b,c,d)},
+abw(a,b,c,d){var s=0,r=A.y(t.W8),q,p=this,o,n,m,l,k,j,i,h,g
+var $async$xy=A.u(function(e,f){if(e===1)return A.v(f,r)
 for(;;)switch(s){case 0:h=A.bO()
 s=p.ay===B.jU?3:5
 break
@@ -99127,8 +99129,8 @@ l=t.N
 k=A.a_(["captcha_token",null],l,t.B)
 g=h
 s=7
-return A.r(n.pb(p.d+"/signup",B.jj,A.FR(A.a_(["email",b,"password",c,"data",a,"gotrue_meta_security",k,"code_challenge",m,"code_challenge_method",m!=null?"s256":null],l,t.z),p.e,null,null,null,null)),$async$xy)
-case 7:g.seg(e)
+return A.r(n.pb(p.d+"/signup",B.jj,A.FR(A.a_(["email",b,"password",d,"data",a,"gotrue_meta_security",k,"code_challenge",m,"code_challenge_method",m!=null?"s256":null],l,t.z),p.e,null,null,null,c)),$async$xy)
+case 7:g.seg(f)
 j=A.aRD(h.aZ())
 i=j.a
 if(i!=null){p.rT(i)
@@ -114574,7 +114576,7 @@ var $async$Cj=A.u(function(d,e){if(d===1)return A.v(e,r)
 for(;;)switch(s){case 0:o=p.a.gf7()
 n=A.a_(["full_name",c],t.N,t.z)
 s=3
-return A.r(o.xy(n,a,b),$async$Cj)
+return A.r(o.xy(n,a,"https://eng-mohamed-ibrahem.github.io/resume-builder/",b),$async$Cj)
 case 3:q=e
 s=1
 break
