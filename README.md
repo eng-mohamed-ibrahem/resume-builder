@@ -110,6 +110,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4.  Push to the branch (`git push origin feature/AmazingFeature`)
 5.  Open a Pull Request
 
+## 🚀 Deployment
+
+For instructions on how to deploy the web application to **GitHub Pages**, see the [Deployment Guide](deployment_guide.md).
+
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

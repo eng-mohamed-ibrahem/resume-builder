@@ -43,3 +43,22 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Security & Secrets
+.env
+*.env
+.env.*
+! .env.example
+
+# IDE Secrets
+.vscode/
+.idea/
+*.ids
+*.ipr
+*.iws
+
+# Sensitive build artifacts
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+
+sentry.properties
