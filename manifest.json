@@ -1,11 +1,11 @@
 {
-    "name": "resumate",
-    "short_name": "resumate",
+    "name": "ResuMate - Professional Resume Builder",
+    "short_name": "ResuMate",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#6366F1",
+    "theme_color": "#6366F1",
+    "description": "Create professional, ATS-optimized resumes with cloud storage and real-time preview.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
