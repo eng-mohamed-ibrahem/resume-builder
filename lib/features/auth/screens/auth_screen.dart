@@ -1,10 +1,9 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:resumate/core/services/supabase_service.dart';
-import 'package:resumate/features/resume/presentation/cubit/resume_cubit.dart';
+import 'package:resumate/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -442,11 +441,11 @@ class _AuthScreenState extends State<AuthScreen>
           if (widget.onLoginSuccess != null) {
             widget.onLoginSuccess!();
           } else {
-            // Default behavior: Load data and close screen
-            await context.read<ResumeCubit>().loadUserResumes();
-            if (mounted) {
-              Navigator.of(context).pop();
-            }
+            // Navigate to dashboard after successful login
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const DashboardPage()),
+              (route) => false,
+            );
           }
         }
       }

@@ -265,10 +265,10 @@ class AppTheme {
                 Set<WidgetState> states,
               ) {
                 if (states.contains(WidgetState.hovered)) {
-                  return Colors.white.withOpacity(0.1);
+                  return Colors.white.withValues(alpha: 0.1);
                 }
                 if (states.contains(WidgetState.pressed)) {
-                  return Colors.white.withOpacity(0.2);
+                  return Colors.white.withValues(alpha: 0.2);
                 }
                 return null;
               }),
@@ -295,10 +295,10 @@ class AppTheme {
                 Set<WidgetState> states,
               ) {
                 if (states.contains(WidgetState.hovered)) {
-                  return _lightPrimary.withOpacity(0.05);
+                  return _lightPrimary.withValues(alpha: 0.05);
                 }
                 if (states.contains(WidgetState.pressed)) {
-                  return _lightPrimary.withOpacity(0.1);
+                  return _lightPrimary.withValues(alpha: 0.1);
                 }
                 return null;
               }),
@@ -612,10 +612,10 @@ class AppTheme {
                 Set<WidgetState> states,
               ) {
                 if (states.contains(WidgetState.hovered)) {
-                  return Colors.white.withOpacity(0.1);
+                  return Colors.white.withValues(alpha: 0.1);
                 }
                 if (states.contains(WidgetState.pressed)) {
-                  return Colors.white.withOpacity(0.2);
+                  return Colors.white.withValues(alpha: 0.2);
                 }
                 return null;
               }),
@@ -642,10 +642,10 @@ class AppTheme {
                 Set<WidgetState> states,
               ) {
                 if (states.contains(WidgetState.hovered)) {
-                  return _darkPrimary.withOpacity(0.1);
+                  return _darkPrimary.withValues(alpha: 0.1);
                 }
                 if (states.contains(WidgetState.pressed)) {
-                  return _darkPrimary.withOpacity(0.15);
+                  return _darkPrimary.withValues(alpha: 0.15);
                 }
                 return null;
               }),

@@ -444,4 +444,35 @@ class ResumeCubit extends Cubit<ResumeState> {
 
     return data;
   }
+
+  Future<void> duplicateResume(String resumeId) async {
+    try {
+      emit(ResumeLoading());
+      final originalResume = await _supabaseService.getFullResume(resumeId);
+
+      final newResume = originalResume.copyWith(
+        id: 'temp_${const Uuid().v4()}',
+        title: '${originalResume.title} (Copied)',
+      );
+
+      await saveToCloud(newResume);
+      await loadUserResumes();
+    } catch (e) {
+      if (kDebugMode) print('Error duplicating resume: $e');
+      emit(const ResumeError('Failed to duplicate resume'));
+      loadUserResumes();
+    }
+  }
+
+  Future<void> deleteResume(String resumeId) async {
+    try {
+      emit(ResumeLoading());
+      await _supabaseService.deleteResume(resumeId);
+      await loadUserResumes();
+    } catch (e) {
+      if (kDebugMode) print('Error deleting resume: $e');
+      emit(const ResumeError('Failed to delete resume'));
+      loadUserResumes();
+    }
+  }
 }

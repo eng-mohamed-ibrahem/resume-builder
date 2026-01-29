@@ -26,6 +26,7 @@ class SupabaseService {
       email: email,
       password: password,
       data: fullName != null ? {'full_name': fullName} : null,
+      emailRedirectTo: 'https://eng-mohamed-ibrahem.github.io/resume-builder/',
     );
   }
 
@@ -129,6 +130,7 @@ class SupabaseService {
           if (headerData != null) {
             resumeData['header'] = {
               'fullName': headerData['full_name'] ?? '',
+              'jobTitle': headerData['job_title'] ?? '',
               'email': headerData['email'] ?? '',
               'phoneNumber': headerData['phone_number'] ?? '',
               'location': headerData['location'] ?? '',
@@ -315,6 +317,7 @@ class SupabaseService {
       await _client.from('header_sections').insert({
         'section_id': section['id'],
         'full_name': headerData['fullName'] ?? '',
+        'job_title': headerData['jobTitle'] ?? '',
         'email': headerData['email'] ?? '',
         'phone_number': headerData['phoneNumber'] ?? '',
         'location': headerData['location'] ?? '',
@@ -470,6 +473,46 @@ class SupabaseService {
         }
       }
     }
+
+    // Save certifications section
+    if (resumeData.containsKey('certifications')) {
+      final certifications = resumeData['certifications'] as List<dynamic>;
+      if (certifications.isNotEmpty) {
+        final section = await _createSection(
+          resumeId,
+          'certifications',
+          'Certifications',
+          sectionOrder++,
+        );
+
+        for (final cert in certifications) {
+          await _client.from('certifications').insert({
+            'section_id': section['id'],
+            'name': cert.toString(),
+          });
+        }
+      }
+    }
+
+    // Save languages section
+    if (resumeData.containsKey('languages')) {
+      final languages = resumeData['languages'] as List<dynamic>;
+      if (languages.isNotEmpty) {
+        final section = await _createSection(
+          resumeId,
+          'languages',
+          'Languages',
+          sectionOrder++,
+        );
+
+        for (final lang in languages) {
+          await _client.from('languages').insert({
+            'section_id': section['id'],
+            'name': lang.toString(),
+          });
+        }
+      }
+    }
   }
 
   Future<Map<String, dynamic>> _createSection(
@@ -556,6 +599,7 @@ class SupabaseService {
               headerData: headerData != null
                   ? HeaderModel(
                       fullName: headerData['full_name'] ?? '',
+                      jobTitle: headerData['job_title'] ?? '',
                       email: headerData['email'] ?? '',
                       phoneNumber: headerData['phone_number'] ?? '',
                       location: headerData['location'] ?? '',

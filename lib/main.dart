@@ -2,12 +2,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resumate/core/config/supabase_config.dart';
+import 'package:resumate/core/services/supabase_service.dart';
 import 'package:resumate/core/theme/app_theme.dart';
+import 'package:resumate/core/theme/theme_cubit.dart';
+import 'package:resumate/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:resumate/features/landing/presentation/pages/landing_page.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'features/resume/presentation/cubit/resume_cubit.dart';
-import 'features/resume/presentation/pages/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,16 +44,39 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => ResumeCubit(),
-      child: MaterialApp(
-        title: 'ResuMate - ATS Resume Builder',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system, // Use system theme by default
-        home: const HomePage(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => ResumeCubit()),
+        BlocProvider(create: (context) => ThemeCubit()),
+      ],
+      child: BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, themeMode) {
+          return MaterialApp(
+            title: 'ResuMate - ATS Resume Builder',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeMode,
+            home: const AuthAwareHome(),
+          );
+        },
       ),
     );
+  }
+}
+
+/// Determines initial screen based on auth state
+class AuthAwareHome extends StatelessWidget {
+  const AuthAwareHome({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = SupabaseService().currentUser;
+
+    // Show dashboard for authenticated users, landing page for guests
+    if (user != null) {
+      return const DashboardPage();
+    }
+    return const LandingPage();
   }
 }

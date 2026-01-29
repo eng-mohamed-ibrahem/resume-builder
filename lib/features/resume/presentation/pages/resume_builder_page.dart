@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resumate/core/services/supabase_service.dart';
 import 'package:resumate/core/utils/export_service.dart';
+import 'package:resumate/core/utils/responsive.dart';
 import 'package:resumate/features/auth/screens/auth_screen.dart';
 import 'package:resumate/features/resume/presentation/cubit/resume_cubit.dart';
 import 'package:resumate/features/resume/presentation/cubit/resume_state.dart';
@@ -73,37 +74,78 @@ class ResumeBuilderPage extends StatelessWidget {
                     },
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    state.resume.title.isEmpty
-                        ? 'Untitled Resume'
-                        : state.resume.title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      state.resume.title.isEmpty
+                          ? 'Untitled Resume'
+                          : state.resume.title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
 
-                  // Save Button
-                  _buildActionButton(
-                    context,
-                    icon: Icons.cloud_upload_rounded,
-                    label: 'Save',
-                    onPressed: () => _handleSaveToCloud(context, state),
-                    isPrimary: false,
-                    isLoading: state.isSaving,
-                  ),
-                  const SizedBox(width: 12),
-                  // Export Button
-                  _buildActionButton(
-                    context,
-                    icon: Icons.file_download_rounded,
-                    label: 'Export PDF',
-                    onPressed: () => ExportService.exportToPdf(
-                      state.resume,
-                      false, // Always use standard view
+                  if (context.isMobile) ...[
+                    // Mobile Actions
+                    if (state.isSaving)
+                      const SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(Icons.copy_rounded),
+                        onPressed: () => _handleDuplicate(context, state),
+                        tooltip: 'Duplicate',
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.cloud_upload_rounded),
+                      onPressed: () => _handleSaveToCloud(context, state),
+                      tooltip: 'Save',
                     ),
-                    isPrimary: true,
-                  ),
+                    IconButton(
+                      icon: const Icon(Icons.file_download_rounded),
+                      onPressed: () =>
+                          ExportService.exportToPdf(state.resume, false),
+                      tooltip: 'Export PDF',
+                    ),
+                  ] else ...[
+                    // Desktop Actions
+                    _buildActionButton(
+                      context,
+                      icon: Icons.copy_rounded,
+                      label: 'Duplicate',
+                      onPressed: () => _handleDuplicate(context, state),
+                      isPrimary: false,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildActionButton(
+                      context,
+                      icon: Icons.cloud_upload_rounded,
+                      label: 'Save',
+                      onPressed: () => _handleSaveToCloud(context, state),
+                      isPrimary: false,
+                      isLoading: state.isSaving,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildActionButton(
+                      context,
+                      icon: Icons.file_download_rounded,
+                      label: 'Export PDF',
+                      onPressed: () =>
+                          ExportService.exportToPdf(state.resume, false),
+                      isPrimary: true,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -369,6 +411,114 @@ class ResumeBuilderPage extends StatelessWidget {
                 Icon(Icons.error_rounded, color: Colors.white),
                 const SizedBox(width: 12),
                 Expanded(child: Text('Error saving to cloud: $e')),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleDuplicate(
+    BuildContext context,
+    ResumeUpdated state,
+  ) async {
+    final user = SupabaseService().currentUser;
+    if (user == null) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Sign In Required'),
+          content: const Text(
+            'You need to be signed in to duplicate your resume.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => AuthScreen(
+                      onLoginSuccess: () {
+                        Navigator.of(context).pop();
+                        _handleDuplicate(context, state);
+                      },
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Sign In'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    try {
+      if (state.resume.id.startsWith('temp_')) {
+        // If it's a temp resume, save it first (effectively duplicating it from temp to cloud)
+        await context.read<ResumeCubit>().saveToCloud(state.resume);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Text('Resume saved to cloud!'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+        }
+      } else {
+        await context.read<ResumeCubit>().duplicateResume(state.resume.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Text('Resume duplicated successfully!'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error_rounded, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Error duplicating resume: $e')),
               ],
             ),
             backgroundColor: Colors.red,
