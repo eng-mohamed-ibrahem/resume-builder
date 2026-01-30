@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:resumate/core/services/supabase_service.dart';
+import 'package:resumate/core/theme/theme_cubit.dart';
 
 /// Sidebar navigation for the dashboard
 class DashboardSidebar extends StatelessWidget {
@@ -25,7 +28,8 @@ class DashboardSidebar extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic,
       width: isExpanded ? 260 : 80,
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -77,10 +81,7 @@ class DashboardSidebar extends StatelessWidget {
           // Navigation items
           Expanded(
             child: ListView(
-              padding: EdgeInsets.symmetric(
-                horizontal: isExpanded ? 12 : 8,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               children: [
                 _SidebarItem(
                   icon: Icons.dashboard_outlined,
@@ -90,70 +91,11 @@ class DashboardSidebar extends StatelessWidget {
                   isSelected: selectedIndex == 0,
                   onTap: () => onNavItemTap(0),
                 ),
-                _SidebarItem(
-                  icon: Icons.description_outlined,
-                  selectedIcon: Icons.description_rounded,
-                  label: 'My Resumes',
-                  isExpanded: isExpanded,
-                  isSelected: selectedIndex == 1,
-                  onTap: () => onNavItemTap(1),
-                ),
-                _SidebarItem(
-                  icon: Icons.grid_view_outlined,
-                  selectedIcon: Icons.grid_view_rounded,
-                  label: 'Templates',
-                  isExpanded: isExpanded,
-                  isSelected: selectedIndex == 2,
-                  onTap: () => onNavItemTap(2),
-                  badge: 'NEW',
-                ),
-                _SidebarItem(
-                  icon: Icons.analytics_outlined,
-                  selectedIcon: Icons.analytics_rounded,
-                  label: 'Analytics',
-                  isExpanded: isExpanded,
-                  isSelected: selectedIndex == 3,
-                  onTap: () => onNavItemTap(3),
-                ),
-
-                const SizedBox(height: 16),
-                if (isExpanded)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      'TOOLS',
-                      style: textTheme.labelSmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-
-                _SidebarItem(
-                  icon: Icons.smart_toy_outlined,
-                  selectedIcon: Icons.smart_toy_rounded,
-                  label: 'AI Assistant',
-                  isExpanded: isExpanded,
-                  isSelected: selectedIndex == 4,
-                  onTap: () => onNavItemTap(4),
-                  badge: 'BETA',
-                ),
-                _SidebarItem(
-                  icon: Icons.spellcheck_outlined,
-                  selectedIcon: Icons.spellcheck_rounded,
-                  label: 'ATS Checker',
-                  isExpanded: isExpanded,
-                  isSelected: selectedIndex == 5,
-                  onTap: () => onNavItemTap(5),
-                ),
               ],
             ),
           ),
 
-          // Bottom section - Sign out only
+          // Bottom section - User profile and actions
           Container(
             padding: EdgeInsets.all(isExpanded ? 16 : 12),
             decoration: BoxDecoration(
@@ -163,19 +105,124 @@ class DashboardSidebar extends StatelessWidget {
                 ),
               ),
             ),
-            child: _SidebarItem(
-              icon: Icons.logout_rounded,
-              selectedIcon: Icons.logout_rounded,
-              label: 'Sign Out',
-              isExpanded: isExpanded,
-              isSelected: false,
-              onTap: onSignOut,
+            child: Column(
+              children: [
+                // User profile
+                _buildUserProfile(context, colorScheme, textTheme, isExpanded),
+                const SizedBox(height: 12),
+
+                // Theme toggle
+                BlocBuilder<ThemeCubit, ThemeMode>(
+                  builder: (context, themeMode) {
+                    return _SidebarItem(
+                      icon: themeMode == ThemeMode.dark
+                          ? Icons.light_mode_outlined
+                          : Icons.dark_mode_outlined,
+                      selectedIcon: themeMode == ThemeMode.dark
+                          ? Icons.light_mode_rounded
+                          : Icons.dark_mode_rounded,
+                      label: themeMode == ThemeMode.dark
+                          ? 'Light Mode'
+                          : 'Dark Mode',
+                      isExpanded: isExpanded,
+                      isSelected: false,
+                      onTap: () => context.read<ThemeCubit>().toggleTheme(),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // Sign out
+                _SidebarItem(
+                  icon: Icons.logout_rounded,
+                  selectedIcon: Icons.logout_rounded,
+                  label: 'Sign Out',
+                  isExpanded: isExpanded,
+                  isSelected: false,
+                  onTap: onSignOut,
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
+
+// Helper functions for user profile
+Widget _buildUserProfile(
+  BuildContext context,
+  ColorScheme colorScheme,
+  TextTheme textTheme,
+  bool isExpanded,
+) {
+  final user = SupabaseService().currentUser;
+  final email = user?.email ?? 'Guest';
+  final initials = _getInitials(email);
+
+  if (!isExpanded) {
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: colorScheme.primaryContainer,
+      child: Text(
+        initials,
+        style: textTheme.labelLarge?.copyWith(
+          color: colorScheme.onPrimary,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  return Row(
+    children: [
+      CircleAvatar(
+        radius: 20,
+        backgroundColor: colorScheme.primaryContainer,
+        child: Text(
+          initials,
+          style: textTheme.labelLarge?.copyWith(
+            color: colorScheme.onPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              user?.userMetadata?['full_name'] ?? 'User',
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              email,
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+String _getInitials(String email) {
+  if (email.isEmpty) return 'G';
+  final parts = email.split('@')[0].split('.');
+  if (parts.length >= 2) {
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+  return email.substring(0, 1).toUpperCase();
 }
 
 class _SidebarItem extends StatefulWidget {
@@ -185,7 +232,6 @@ class _SidebarItem extends StatefulWidget {
   final bool isExpanded;
   final bool isSelected;
   final VoidCallback onTap;
-  final String? badge;
 
   const _SidebarItem({
     required this.icon,
@@ -194,7 +240,6 @@ class _SidebarItem extends StatefulWidget {
     required this.isExpanded,
     required this.isSelected,
     required this.onTap,
-    this.badge,
   });
 
   @override
@@ -255,29 +300,6 @@ class _SidebarItemState extends State<_SidebarItem> {
                     ),
                   ),
                 ),
-                if (widget.badge != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: widget.badge == 'NEW'
-                          ? colorScheme.primaryContainer
-                          : colorScheme.secondaryContainer,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      widget.badge!,
-                      style: textTheme.labelSmall?.copyWith(
-                        color: widget.badge == 'NEW'
-                            ? colorScheme.primary
-                            : colorScheme.secondary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 9,
-                      ),
-                    ),
-                  ),
               ],
             ],
           ),

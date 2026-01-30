@@ -209,9 +209,7 @@ class Footer extends StatelessWidget {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () {
-          // TODO: Handle navigation
-        },
+        onTap: () {},
         child: Text(
           text,
           style: textTheme.bodyMedium?.copyWith(

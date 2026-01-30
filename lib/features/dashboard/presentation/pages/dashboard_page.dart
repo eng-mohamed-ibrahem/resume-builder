@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:resumate/core/services/supabase_service.dart';
+import 'package:resumate/core/theme/theme_cubit.dart';
 import 'package:resumate/core/utils/export_service.dart';
 import 'package:resumate/core/utils/responsive.dart';
 import 'package:resumate/features/dashboard/presentation/widgets/dashboard_sidebar.dart';
@@ -19,8 +20,9 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  bool _isSidebarExpanded = true;
+  bool _isSidebarExpanded = false;
   int _selectedNavIndex = 0;
+  bool _isGridView = true; // Grid view by default
 
   @override
   void initState() {
@@ -35,12 +37,30 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLowest,
       drawer: context.isMobile ? _buildDrawer() : null,
-      body: Row(
+      body: Stack(
+        clipBehavior: Clip.none,
         children: [
-          // Sidebar (desktop/tablet only)
+          Row(
+            children: [
+              if (!context.isMobile)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOutCubic,
+                  width: _isSidebarExpanded ? 260 : 80,
+                ),
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildTopBar(),
+                    Expanded(child: _buildMainContent()),
+                  ],
+                ),
+              ),
+            ],
+          ),
           if (!context.isMobile)
             DashboardSidebar(
-              isExpanded: _isSidebarExpanded && context.isDesktop,
+              isExpanded: _isSidebarExpanded,
               selectedIndex: _selectedNavIndex,
               onNavItemTap: (index) =>
                   setState(() => _selectedNavIndex = index),
@@ -48,16 +68,56 @@ class _DashboardPageState extends State<DashboardPage> {
                   setState(() => _isSidebarExpanded = !_isSidebarExpanded),
               onSignOut: _handleSignOut,
             ),
-
-          // Main content
-          Expanded(
-            child: Column(
-              children: [
-                _buildTopBar(),
-                Expanded(child: _buildMainContent()),
-              ],
+          // Floating toggle button - positioned outside sidebar for proper hit testing
+          if (!context.isMobile)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOutCubic,
+              left: (_isSidebarExpanded ? 260 : 80) - 14,
+              top: 48,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () =>
+                      setState(() => _isSidebarExpanded = !_isSidebarExpanded),
+                  customBorder: const CircleBorder(),
+                  hoverColor: colorScheme.primary.withValues(alpha: 0.1),
+                  splashColor: colorScheme.primary.withValues(alpha: 0.2),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          _isSidebarExpanded
+                              ? Icons.chevron_left_rounded
+                              : Icons.chevron_right_rounded,
+                          size: 18,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -104,10 +164,18 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Row(
         children: [
           if (context.isMobile)
-            IconButton(
-              icon: const Icon(Icons.menu_rounded),
-              onPressed: () => Scaffold.of(context).openDrawer(),
+            Builder(
+              builder: (context) => IconButton(
+                style: IconButton.styleFrom(
+                  backgroundColor: colorScheme.primaryContainer.withValues(
+                    alpha: 0.1,
+                  ),
+                ),
+                icon: const Icon(Icons.arrow_forward_ios_rounded),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
             ),
+          const SizedBox(width: 8),
           if (!context.isMobile) ...[
             Expanded(
               child: Column(
@@ -131,6 +199,25 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ],
           if (context.isMobile) const Spacer(),
+
+          // Theme toggle
+          BlocBuilder<ThemeCubit, ThemeMode>(
+            builder: (context, themeMode) {
+              return IconButton(
+                icon: Icon(
+                  themeMode == ThemeMode.dark
+                      ? Icons.light_mode_rounded
+                      : Icons.dark_mode_rounded,
+                ),
+                tooltip: themeMode == ThemeMode.dark
+                    ? 'Switch to Light Mode'
+                    : 'Switch to Dark Mode',
+                onPressed: () {
+                  context.read<ThemeCubit>().toggleTheme();
+                },
+              );
+            },
+          ),
         ],
       ),
     );
@@ -287,18 +374,30 @@ class _DashboardPageState extends State<DashboardPage> {
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
-              // View toggle (future)
+              // View toggle
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.grid_view_rounded),
-                    onPressed: () {},
+                    icon: Icon(
+                      Icons.grid_view_rounded,
+                      color: _isGridView
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    onPressed: () => setState(() => _isGridView = true),
                     tooltip: 'Grid view',
+                    isSelected: _isGridView,
                   ),
                   IconButton(
-                    icon: const Icon(Icons.list_rounded),
-                    onPressed: () {},
+                    icon: Icon(
+                      Icons.list_rounded,
+                      color: !_isGridView
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    onPressed: () => setState(() => _isGridView = false),
                     tooltip: 'List view',
+                    isSelected: !_isGridView,
                   ),
                 ],
               ),
@@ -306,35 +405,65 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 20),
 
-          // Resume grid
+          // Resume grid or list
           Expanded(
-            child: GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 20,
-                mainAxisSpacing: 20,
-                childAspectRatio: context.isMobile ? 1.5 : 0.85,
-              ),
-              itemCount: resumes.length,
-              itemBuilder: (context, index) {
-                final resume = resumes[index];
-                return ResumeCardEnhanced(
-                  title: resume['title'] ?? 'Untitled',
-                  updatedAt: DateTime.parse(resume['updated_at']),
-                  onTap: () {
-                    context.read<ResumeCubit>().loadResume(resume['id']);
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ResumeBuilderPage(),
-                      ),
-                    );
-                  },
-                  onDuplicate: () => _handleDuplicate(resume['id']),
-                  onDelete: () => _handleDelete(resume['id']),
-                  onExport: () => _handleExport(resume['id']),
-                );
-              },
-            ),
+            child: _isGridView
+                ? GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 20,
+                      mainAxisSpacing: 20,
+                      childAspectRatio: context.isMobile ? 1.5 : 0.85,
+                    ),
+                    itemCount: resumes.length,
+                    itemBuilder: (context, index) {
+                      final resume = resumes[index];
+                      return ResumeCardEnhanced(
+                        key: ValueKey(resume['id']),
+                        title: resume['title'] ?? 'Untitled',
+                        updatedAt: DateTime.parse(resume['updated_at']),
+                        onTap: () {
+                          context.read<ResumeCubit>().loadResume(resume['id']);
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ResumeBuilderPage(),
+                            ),
+                          );
+                        },
+                        onDuplicate: () => _handleDuplicate(resume['id']),
+                        onDelete: () => _handleDelete(resume['id']),
+                        onExport: () => _handleExport(resume['id']),
+                      );
+                    },
+                  )
+                : ListView.builder(
+                    itemCount: resumes.length,
+                    itemBuilder: (context, index) {
+                      final resume = resumes[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: ResumeCardEnhanced(
+                          key: ValueKey(resume['id']),
+                          title: resume['title'] ?? 'Untitled',
+                          updatedAt: DateTime.parse(resume['updated_at']),
+                          onTap: () {
+                            context.read<ResumeCubit>().loadResume(
+                              resume['id'],
+                            );
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const ResumeBuilderPage(),
+                              ),
+                            );
+                          },
+                          onDuplicate: () => _handleDuplicate(resume['id']),
+                          onDelete: () => _handleDelete(resume['id']),
+                          onExport: () => _handleExport(resume['id']),
+                          isListView: true,
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

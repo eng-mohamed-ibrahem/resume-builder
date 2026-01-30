@@ -10,6 +10,7 @@ class ResumeCardEnhanced extends StatefulWidget {
   final VoidCallback onDuplicate;
   final VoidCallback onDelete;
   final VoidCallback onExport;
+  final bool isListView;
 
   const ResumeCardEnhanced({
     super.key,
@@ -19,6 +20,7 @@ class ResumeCardEnhanced extends StatefulWidget {
     required this.onDuplicate,
     required this.onDelete,
     required this.onExport,
+    this.isListView = false,
   });
 
   @override
@@ -30,6 +32,9 @@ class _ResumeCardEnhancedState extends State<ResumeCardEnhanced> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isListView) {
+      return _buildListView(context);
+    }
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -61,7 +66,7 @@ class _ResumeCardEnhancedState extends State<ResumeCardEnhanced> {
             ],
           ),
           transform: _isHovered
-              ? (Matrix4.identity()..translate(0, -4))
+              ? Matrix4.translationValues(0.0, -4.0, 0.0)
               : Matrix4.identity(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -371,6 +376,138 @@ class _ResumeCardEnhancedState extends State<ResumeCardEnhanced> {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListView(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _isHovered
+                  ? colorScheme.primary.withValues(alpha: 0.3)
+                  : colorScheme.outlineVariant.withValues(alpha: 0.3),
+              width: _isHovered ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Small preview
+              Container(
+                width: 48,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.3,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.description_rounded,
+                    color: colorScheme.primary.withValues(alpha: 0.5),
+                    size: 24,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Title and date
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.title.isEmpty ? 'Untitled' : widget.title,
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Edited ${timeago.format(widget.updatedAt)}',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Actions
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_rounded, size: 20),
+                    onPressed: widget.onTap,
+                    tooltip: 'Edit',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded, size: 20),
+                    onPressed: widget.onDuplicate,
+                    tooltip: 'Duplicate',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.download_rounded, size: 20),
+                    onPressed: widget.onExport,
+                    tooltip: 'Export',
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert_rounded, size: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    onSelected: (value) {
+                      if (value == 'delete') widget.onDelete();
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                              color: colorScheme.error,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Delete',
+                              style: TextStyle(color: colorScheme.error),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -202,7 +202,7 @@ class _FeatureCardState extends State<_FeatureCard> {
           ],
         ),
         transform: _isHovered
-            ? (Matrix4.identity()..translate(0, -4))
+            ? Matrix4.translationValues(0.0, -4.0, 0.0)
             : Matrix4.identity(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
