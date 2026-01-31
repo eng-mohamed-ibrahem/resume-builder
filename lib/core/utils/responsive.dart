@@ -8,17 +8,21 @@ class Breakpoints {
   static const double mobile = 600;
 
   /// Tablet: 600px - 1024px
-  static const double tablet = 1024;
+  static const double tablet = 850;
 
-  /// Desktop: > 1024px
-  static const double desktop = 1024;
+  /// Large Tablet (Landscape): 800px - 1200px
+  static const double largeTablet = 1200;
+
+  /// Desktop: > 1200px
+  static const double desktop = 1200;
 
   /// Large Desktop: > 1440px
   static const double largeDesktop = 1440;
 }
 
 /// Device type enum for responsive layouts
-enum DeviceType { mobile, tablet, desktop }
+/// DeviceType enum for responsive layouts
+enum DeviceType { mobile, tablet, largeTablet, desktop }
 
 /// Get the current device type based on screen width
 DeviceType getDeviceType(BuildContext context) {
@@ -27,6 +31,8 @@ DeviceType getDeviceType(BuildContext context) {
     return DeviceType.mobile;
   } else if (width < Breakpoints.tablet) {
     return DeviceType.tablet;
+  } else if (width < Breakpoints.largeTablet) {
+    return DeviceType.largeTablet;
   } else {
     return DeviceType.desktop;
   }
@@ -59,7 +65,12 @@ extension ResponsiveContext on BuildContext {
   /// Check if screen is smaller than tablet (mobile only)
   bool get isMobileOnly => screenWidth < Breakpoints.mobile;
 
-  /// Check if screen is tablet or larger
+  /// Check if current screen is large tablet
+  bool get isLargeTablet =>
+      screenWidth >= Breakpoints.tablet &&
+      screenWidth < Breakpoints.largeTablet;
+
+  /// Check if screen is tablet or larger(includes large tablet)
   bool get isTabletOrLarger => screenWidth >= Breakpoints.mobile;
 
   /// Check if screen is desktop or larger
@@ -70,12 +81,14 @@ extension ResponsiveContext on BuildContext {
 class Responsive extends StatelessWidget {
   final Widget mobile;
   final Widget? tablet;
+  final Widget? largeTablet;
   final Widget? desktop;
 
   const Responsive({
     super.key,
     required this.mobile,
     this.tablet,
+    this.largeTablet,
     this.desktop,
   });
 
@@ -84,7 +97,9 @@ class Responsive extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= Breakpoints.desktop) {
-          return desktop ?? tablet ?? mobile;
+          return desktop ?? largeTablet ?? tablet ?? mobile;
+        } else if (constraints.maxWidth >= Breakpoints.largeTablet) {
+          return largeTablet ?? tablet ?? mobile;
         } else if (constraints.maxWidth >= Breakpoints.mobile) {
           return tablet ?? mobile;
         } else {
@@ -99,15 +114,23 @@ class Responsive extends StatelessWidget {
 class ResponsiveValue<T> {
   final T mobile;
   final T? tablet;
+  final T? largeTablet;
   final T? desktop;
 
-  const ResponsiveValue({required this.mobile, this.tablet, this.desktop});
+  const ResponsiveValue({
+    required this.mobile,
+    this.tablet,
+    this.largeTablet,
+    this.desktop,
+  });
 
   /// Get the appropriate value based on screen width
   T getValue(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     if (width >= Breakpoints.desktop) {
-      return desktop ?? tablet ?? mobile;
+      return desktop ?? largeTablet ?? tablet ?? mobile;
+    } else if (width >= Breakpoints.largeTablet) {
+      return largeTablet ?? tablet ?? mobile;
     } else if (width >= Breakpoints.mobile) {
       return tablet ?? mobile;
     } else {
@@ -186,23 +209,26 @@ class ResponsiveGrid {
     BuildContext context, {
     int mobile = 1,
     int tablet = 2,
+    int largeTablet = 3,
     int desktop = 3,
     int? largeDesktop,
   }) {
     if (context.isLargeDesktop) return largeDesktop ?? desktop;
     if (context.isDesktop) return desktop;
+    if (context.screenWidth >= Breakpoints.tablet) return largeTablet;
     if (context.isTablet) return tablet;
     return mobile;
   }
 
-  /// Get aspect ratio for grid items
   static double childAspectRatio(
     BuildContext context, {
     double mobile = 1.0,
     double tablet = 1.2,
+    double largeTablet = 1.2,
     double desktop = 1.3,
   }) {
     if (context.isDesktop) return desktop;
+    if (context.screenWidth >= Breakpoints.tablet) return largeTablet;
     if (context.isTablet) return tablet;
     return mobile;
   }

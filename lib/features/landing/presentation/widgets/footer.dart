@@ -42,31 +42,6 @@ class Footer extends StatelessWidget {
           children: [
             // Brand column
             Expanded(flex: 2, child: _buildBrandColumn(textTheme, colorScheme)),
-            // // Links columns
-            // Expanded(
-            //   child: _buildLinksColumn(textTheme, colorScheme, 'Product', [
-            //     'Features',
-            //     'Templates',
-            //     'Pricing',
-            //     'Examples',
-            //   ]),
-            // ),
-            // Expanded(
-            //   child: _buildLinksColumn(textTheme, colorScheme, 'Resources', [
-            //     'Blog',
-            //     'Help Center',
-            //     'Resume Tips',
-            //     'Career Advice',
-            //   ]),
-            // ),
-            // Expanded(
-            //   child: _buildLinksColumn(textTheme, colorScheme, 'Company', [
-            //     'About',
-            //     'Contact',
-            //     'Privacy',
-            //     'Terms',
-            //   ]),
-            // ),
           ],
         ),
         const SizedBox(height: 40),
@@ -81,25 +56,6 @@ class Footer extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         _buildBrandColumn(textTheme, colorScheme, isCentered: true),
-        const SizedBox(height: 32),
-        // Links in a wrap
-        // Wrap(
-        //   spacing: 24,
-        //   runSpacing: 16,
-        //   alignment: WrapAlignment.center,
-        //   children:
-        //       [
-        //             'Features',
-        //             'Templates',
-        //             'Pricing',
-        //             'Blog',
-        //             'Help',
-        //             'About',
-        //             'Privacy',
-        //           ]
-        //           .map((link) => _buildFooterLink(textTheme, colorScheme, link))
-        //           .toList(),
-        // ),
         const SizedBox(height: 32),
         _buildBottomBar(textTheme, colorScheme, isCentered: true),
       ],
@@ -155,73 +111,7 @@ class Footer extends StatelessWidget {
             ),
           ),
         ),
-        // const SizedBox(height: 20),
-        // Social icons
-        // Row(
-        //   mainAxisSize: MainAxisSize.min,
-        //   children: [
-        //     _buildSocialIcon(colorScheme, Icons.language),
-        //     const SizedBox(width: 12),
-        //     _buildSocialIcon(colorScheme, Icons.code),
-        //     const SizedBox(width: 12),
-        //     _buildSocialIcon(colorScheme, Icons.alternate_email),
-        //   ],
-        // ),
       ],
-    );
-  }
-
-  Widget _buildSocialIcon(ColorScheme colorScheme, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
-    );
-  }
-
-  Widget _buildLinksColumn(
-    TextTheme textTheme,
-    ColorScheme colorScheme,
-    String title,
-    List<String> links,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 16),
-        ...links.map(
-          (link) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildFooterLink(textTheme, colorScheme, link),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFooterLink(
-    TextTheme textTheme,
-    ColorScheme colorScheme,
-    String text,
-  ) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {},
-        child: Text(
-          text,
-          style: textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
     );
   }
 
@@ -239,38 +129,65 @@ class Footer extends StatelessWidget {
           ),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: isCentered
-            ? MainAxisAlignment.center
-            : MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '© 2026 ResuMate. All rights reserved.',
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          if (!isCentered) ...[
-            Row(
+      child: isCentered
+          ? Column(
               children: [
                 Text(
-                  'Made with ',
+                  '© 2026 ResuMate. All rights reserved.',
+                  textAlign: TextAlign.center,
                   style: textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
-                Icon(Icons.favorite, size: 14, color: colorScheme.error),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Made with ',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Icon(Icons.favorite, size: 14, color: colorScheme.error),
+                    Text(
+                      ' using Flutter',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 Text(
-                  ' using Flutter',
+                  '© 2026 ResuMate. All rights reserved.',
                   style: textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      'Made with ',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Icon(Icons.favorite, size: 14, color: colorScheme.error),
+                    Text(
+                      ' using Flutter',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ],
-      ),
     );
   }
 }

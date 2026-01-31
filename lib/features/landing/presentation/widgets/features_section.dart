@@ -121,10 +121,25 @@ class FeaturesSection extends StatelessWidget {
       ),
     ];
 
+    // For mobile, we use a Column which naturally expands height to fit content
+    if (context.isMobile) {
+      return Column(
+        children: features
+            .map(
+              (feature) => Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: _FeatureCard(feature: feature),
+              ),
+            )
+            .toList(),
+      );
+    }
+
     final crossAxisCount = ResponsiveGrid.crossAxisCount(
       context,
       mobile: 1,
       tablet: 2,
+      largeTablet: 3,
       desktop: 3,
     );
 
@@ -135,7 +150,14 @@ class FeaturesSection extends StatelessWidget {
         crossAxisCount: crossAxisCount,
         crossAxisSpacing: 24,
         mainAxisSpacing: 24,
-        childAspectRatio: context.isMobile ? 2.5 : 1.4,
+        // Adjusted aspect ratios to prevent overflow on Tablet/Desktop
+        // Smaller ratio = Taller card
+        childAspectRatio: ResponsiveGrid.childAspectRatio(
+          context,
+          tablet: 1.5,
+          largeTablet: 1.2,
+          desktop: 1.0,
+        ),
       ),
       itemCount: features.length,
       itemBuilder: (context, index) {
@@ -206,6 +228,7 @@ class _FeatureCardState extends State<_FeatureCard> {
             : Matrix4.identity(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Icon with gradient background
             AnimatedContainer(
@@ -242,7 +265,7 @@ class _FeatureCardState extends State<_FeatureCard> {
             ),
             const SizedBox(height: 8),
             // Description
-            Expanded(
+            Flexible(
               child: Text(
                 widget.feature.description,
                 style: textTheme.bodyMedium?.copyWith(
