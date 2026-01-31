@@ -4,10 +4,12 @@ import 'package:resumate/core/services/supabase_service.dart';
 import 'package:resumate/core/utils/export_service.dart';
 import 'package:resumate/core/utils/responsive.dart';
 import 'package:resumate/features/auth/screens/auth_screen.dart';
+import 'package:resumate/features/resume/data/models/resume_models.dart';
 import 'package:resumate/features/resume/presentation/cubit/resume_cubit.dart';
 import 'package:resumate/features/resume/presentation/cubit/resume_state.dart';
 import 'package:resumate/features/resume/presentation/widgets/resume_editor.dart';
 import 'package:resumate/features/resume/presentation/widgets/resume_preview.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class ResumeBuilderPage extends StatelessWidget {
   const ResumeBuilderPage({super.key});
@@ -27,8 +29,14 @@ class ResumeBuilderPage extends StatelessWidget {
           return Scaffold(body: _buildMainContent(context, state));
         }
         if (state is ResumeLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          return Scaffold(
+            body: Skeletonizer(
+              enabled: true,
+              child: _buildMainContent(
+                context,
+                ResumeUpdated(_dummyResume, isAtsView: false),
+              ),
+            ),
           );
         }
         // If state is not updated (e.g. went back to list), we should probably pop or show something else.
@@ -39,6 +47,30 @@ class ResumeBuilderPage extends StatelessWidget {
       },
     );
   }
+
+  static final ResumeModel _dummyResume = ResumeModel(
+    id: 'dummy',
+    title: 'Resume Title Placeholder',
+    sections: [
+      SectionModel(
+        id: 's1',
+        title: 'Personal Info',
+        type: SectionType.header,
+        headerData: HeaderModel(),
+      ),
+      SectionModel(
+        id: 's2',
+        title: 'Professional Summary',
+        type: SectionType.summary,
+      ),
+      SectionModel(
+        id: 's3',
+        title: 'Work Experience',
+        type: SectionType.workExperience,
+      ),
+      SectionModel(id: 's4', title: 'Education', type: SectionType.education),
+    ],
+  );
 
   Widget _buildMainContent(BuildContext context, ResumeUpdated state) {
     final theme = Theme.of(context);

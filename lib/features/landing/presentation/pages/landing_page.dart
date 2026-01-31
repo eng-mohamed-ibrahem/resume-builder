@@ -4,9 +4,11 @@ import 'package:resumate/core/theme/theme_cubit.dart';
 import 'package:resumate/core/utils/responsive.dart';
 import 'package:resumate/features/auth/screens/auth_screen.dart';
 import 'package:resumate/features/landing/presentation/widgets/features_section.dart';
+import 'package:resumate/features/landing/presentation/widgets/footer.dart';
 import 'package:resumate/features/landing/presentation/widgets/hero_section.dart';
 import 'package:resumate/features/resume/presentation/cubit/resume_cubit.dart';
 import 'package:resumate/features/resume/presentation/pages/resume_builder_page.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 /// Main landing page for unauthenticated users
 class LandingPage extends StatefulWidget {
@@ -18,6 +20,20 @@ class LandingPage extends StatefulWidget {
 
 class _LandingPageState extends State<LandingPage> {
   final GlobalKey _featuresKey = GlobalKey();
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Simulate a premium loading/entry effect
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    });
+  }
 
   void _scrollToFeatures() {
     final context = _featuresKey.currentContext;
@@ -42,11 +58,15 @@ class _LandingPageState extends State<LandingPage> {
           ),
           // Main content
           SliverToBoxAdapter(
-            child: Column(
-              children: [
-                HeroSection(onScrollToFeatures: _scrollToFeatures),
-                FeaturesSection(key: _featuresKey),
-              ],
+            child: Skeletonizer(
+              enabled: _isLoading,
+              child: Column(
+                children: [
+                  HeroSection(onScrollToFeatures: _scrollToFeatures),
+                  FeaturesSection(key: _featuresKey),
+                  const Footer(),
+                ],
+              ),
             ),
           ),
         ],
@@ -80,9 +100,7 @@ class _NavigationBarDelegate extends SliverPersistentHeaderDelegate {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        color: isScrolled
-            ? colorScheme.surface.withValues(alpha: 0.95)
-            : Colors.transparent,
+        color: colorScheme.surface.withValues(alpha: 0.95),
         border: Border(
           bottom: BorderSide(
             color: isScrolled

@@ -1,9 +1,16 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
+import 'package:resumate/core/services/supabase_service.dart';
+import 'package:resumate/core/utils/export_service.dart';
 import 'package:resumate/core/utils/responsive.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 /// Enhanced resume card with hover effects and actions
 class ResumeCardEnhanced extends StatefulWidget {
+  final String resumeId;
   final String title;
   final DateTime updatedAt;
   final VoidCallback onTap;
@@ -14,6 +21,7 @@ class ResumeCardEnhanced extends StatefulWidget {
 
   const ResumeCardEnhanced({
     super.key,
+    required this.resumeId,
     required this.title,
     required this.updatedAt,
     required this.onTap,
@@ -29,6 +37,49 @@ class ResumeCardEnhanced extends StatefulWidget {
 
 class _ResumeCardEnhancedState extends State<ResumeCardEnhanced> {
   bool _isHovered = false;
+  Future<Uint8List?>? _previewFuture;
+
+  // Simple static cache to store previews and avoid re-rendering
+  static final Map<String, Uint8List> _previewCache = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreview();
+  }
+
+  @override
+  void didUpdateWidget(ResumeCardEnhanced oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.resumeId != widget.resumeId) {
+      _loadPreview();
+    }
+  }
+
+  void _loadPreview() {
+    if (_previewCache.containsKey(widget.resumeId)) {
+      _previewFuture = Future.value(_previewCache[widget.resumeId]);
+    } else {
+      _previewFuture = _generatePreview();
+    }
+  }
+
+  Future<Uint8List?> _generatePreview() async {
+    try {
+      final resume = await SupabaseService().getFullResume(widget.resumeId);
+      final pdfBytes = await ExportService.generatePdfBytes(resume, false);
+
+      // Rasterize the first page
+      await for (final page in Printing.raster(pdfBytes, pages: [0], dpi: 72)) {
+        final imageBytes = await page.toPng();
+        _previewCache[widget.resumeId] = imageBytes;
+        return imageBytes;
+      }
+    } catch (e) {
+      debugPrint('Error generating preview: $e');
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +137,7 @@ class _ResumeCardEnhancedState extends State<ResumeCardEnhanced> {
                           top: Radius.circular(20),
                         ),
                       ),
-                      child: Center(child: _buildMockResume(colorScheme)),
+                      child: Center(child: _buildPreview(colorScheme)),
                     ),
 
                     // Hover overlay with actions
@@ -264,6 +315,43 @@ class _ResumeCardEnhancedState extends State<ResumeCardEnhanced> {
     );
   }
 
+  Widget _buildPreview(ColorScheme colorScheme, {bool isMini = false}) {
+    return FutureBuilder<Uint8List?>(
+      future: _previewFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Skeletonizer(
+            enabled: true,
+            child: isMini ? const SizedBox() : _buildMockResume(colorScheme),
+          );
+        }
+
+        if (snapshot.hasData && snapshot.data != null) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(isMini ? 4 : 8),
+            child: Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              child: Image.memory(
+                snapshot.data!,
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.medium,
+              ),
+            ),
+          );
+        }
+
+        return _buildMockResume(colorScheme);
+      },
+    );
+  }
+
   Widget _buildMockResume(ColorScheme colorScheme) {
     return Container(
       width: 80,
@@ -422,13 +510,7 @@ class _ResumeCardEnhancedState extends State<ResumeCardEnhanced> {
                   ),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Center(
-                  child: Icon(
-                    Icons.description_rounded,
-                    color: colorScheme.primary.withValues(alpha: 0.5),
-                    size: 24,
-                  ),
-                ),
+                child: Center(child: _buildPreview(colorScheme, isMini: true)),
               ),
               const SizedBox(width: 16),
 

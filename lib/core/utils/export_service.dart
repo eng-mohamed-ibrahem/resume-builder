@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -17,6 +19,17 @@ import '../../features/resume/data/models/resume_models.dart';
 /// - Consistent date formatting
 class ExportService {
   static Future<void> exportToPdf(ResumeModel resume, bool isAtsView) async {
+    final bytes = await generatePdfBytes(resume, isAtsView);
+    await Printing.sharePdf(
+      bytes: bytes,
+      filename: '${resume.title.isNotEmpty ? resume.title : 'Resume'}.pdf',
+    );
+  }
+
+  static Future<Uint8List> generatePdfBytes(
+    ResumeModel resume,
+    bool isAtsView,
+  ) async {
     // Load fonts with Unicode support
     final robotoRegular = await PdfGoogleFonts.robotoRegular();
     final robotoBold = await PdfGoogleFonts.robotoBold();
@@ -51,11 +64,7 @@ class ExportService {
       ),
     );
 
-    final bytes = await pdf.save();
-    await Printing.sharePdf(
-      bytes: bytes,
-      filename: '${resume.title.isNotEmpty ? resume.title : 'Resume'}.pdf',
-    );
+    return await pdf.save();
   }
 
   /// Extract author name from header section

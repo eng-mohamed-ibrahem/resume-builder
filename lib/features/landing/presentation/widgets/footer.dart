@@ -33,37 +33,40 @@ class Footer extends StatelessWidget {
 
   Widget _buildDesktopLayout(TextTheme textTheme, ColorScheme colorScheme) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Brand column
             Expanded(flex: 2, child: _buildBrandColumn(textTheme, colorScheme)),
-            // Links columns
-            Expanded(
-              child: _buildLinksColumn(textTheme, colorScheme, 'Product', [
-                'Features',
-                'Templates',
-                'Pricing',
-                'Examples',
-              ]),
-            ),
-            Expanded(
-              child: _buildLinksColumn(textTheme, colorScheme, 'Resources', [
-                'Blog',
-                'Help Center',
-                'Resume Tips',
-                'Career Advice',
-              ]),
-            ),
-            Expanded(
-              child: _buildLinksColumn(textTheme, colorScheme, 'Company', [
-                'About',
-                'Contact',
-                'Privacy',
-                'Terms',
-              ]),
-            ),
+            // // Links columns
+            // Expanded(
+            //   child: _buildLinksColumn(textTheme, colorScheme, 'Product', [
+            //     'Features',
+            //     'Templates',
+            //     'Pricing',
+            //     'Examples',
+            //   ]),
+            // ),
+            // Expanded(
+            //   child: _buildLinksColumn(textTheme, colorScheme, 'Resources', [
+            //     'Blog',
+            //     'Help Center',
+            //     'Resume Tips',
+            //     'Career Advice',
+            //   ]),
+            // ),
+            // Expanded(
+            //   child: _buildLinksColumn(textTheme, colorScheme, 'Company', [
+            //     'About',
+            //     'Contact',
+            //     'Privacy',
+            //     'Terms',
+            //   ]),
+            // ),
           ],
         ),
         const SizedBox(height: 40),
@@ -74,27 +77,29 @@ class Footer extends StatelessWidget {
 
   Widget _buildMobileLayout(TextTheme textTheme, ColorScheme colorScheme) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         _buildBrandColumn(textTheme, colorScheme, isCentered: true),
         const SizedBox(height: 32),
         // Links in a wrap
-        Wrap(
-          spacing: 24,
-          runSpacing: 16,
-          alignment: WrapAlignment.center,
-          children:
-              [
-                    'Features',
-                    'Templates',
-                    'Pricing',
-                    'Blog',
-                    'Help',
-                    'About',
-                    'Privacy',
-                  ]
-                  .map((link) => _buildFooterLink(textTheme, colorScheme, link))
-                  .toList(),
-        ),
+        // Wrap(
+        //   spacing: 24,
+        //   runSpacing: 16,
+        //   alignment: WrapAlignment.center,
+        //   children:
+        //       [
+        //             'Features',
+        //             'Templates',
+        //             'Pricing',
+        //             'Blog',
+        //             'Help',
+        //             'About',
+        //             'Privacy',
+        //           ]
+        //           .map((link) => _buildFooterLink(textTheme, colorScheme, link))
+        //           .toList(),
+        // ),
         const SizedBox(height: 32),
         _buildBottomBar(textTheme, colorScheme, isCentered: true),
       ],
@@ -150,18 +155,18 @@ class Footer extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        // const SizedBox(height: 20),
         // Social icons
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildSocialIcon(colorScheme, Icons.language),
-            const SizedBox(width: 12),
-            _buildSocialIcon(colorScheme, Icons.code),
-            const SizedBox(width: 12),
-            _buildSocialIcon(colorScheme, Icons.alternate_email),
-          ],
-        ),
+        // Row(
+        //   mainAxisSize: MainAxisSize.min,
+        //   children: [
+        //     _buildSocialIcon(colorScheme, Icons.language),
+        //     const SizedBox(width: 12),
+        //     _buildSocialIcon(colorScheme, Icons.code),
+        //     const SizedBox(width: 12),
+        //     _buildSocialIcon(colorScheme, Icons.alternate_email),
+        //   ],
+        // ),
       ],
     );
   }

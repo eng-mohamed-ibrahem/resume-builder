@@ -10,6 +10,7 @@ import 'package:resumate/features/landing/presentation/pages/landing_page.dart';
 import 'package:resumate/features/resume/presentation/cubit/resume_cubit.dart';
 import 'package:resumate/features/resume/presentation/cubit/resume_state.dart';
 import 'package:resumate/features/resume/presentation/pages/resume_builder_page.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 /// Dashboard page for authenticated users to manage their resumes
 class DashboardPage extends StatefulWidget {
@@ -49,11 +50,20 @@ class _DashboardPageState extends State<DashboardPage> {
                   width: _isSidebarExpanded ? 260 : 80,
                 ),
               Expanded(
-                child: Column(
-                  children: [
-                    _buildTopBar(),
-                    Expanded(child: _buildMainContent()),
-                  ],
+                child: BlocBuilder<ResumeCubit, ResumeState>(
+                  buildWhen: (previous, current) => current is! ResumeUpdated,
+                  builder: (context, state) {
+                    final isLoading = state is ResumeLoading;
+                    return Skeletonizer(
+                      enabled: isLoading,
+                      child: Column(
+                        children: [
+                          _buildTopBar(),
+                          Expanded(child: _buildMainContent(state)),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -240,29 +250,33 @@ class _DashboardPageState extends State<DashboardPage> {
     return '$greeting, $name 👋';
   }
 
-  Widget _buildMainContent() {
-    return BlocBuilder<ResumeCubit, ResumeState>(
-      buildWhen: (previous, current) => current is! ResumeUpdated,
-      builder: (context, state) {
-        if (state is ResumeLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+  Widget _buildMainContent(ResumeState state) {
+    if (state is ResumeError) {
+      return _buildErrorState(state.message);
+    }
 
-        if (state is ResumeError) {
-          return _buildErrorState(state.message);
-        }
-
-        if (state is ResumeListLoaded) {
-          if (state.resumes.isEmpty) {
-            return _buildEmptyState();
-          }
-          return _buildResumeGrid(state.resumes);
-        }
-
+    if (state is ResumeListLoaded) {
+      if (state.resumes.isEmpty) {
         return _buildEmptyState();
-      },
-    );
+      }
+      return _buildResumeGrid(state.resumes);
+    }
+
+    if (state is ResumeLoading) {
+      return _buildResumeGrid(_dummyResumes);
+    }
+
+    return _buildEmptyState();
   }
+
+  final List<Map<String, dynamic>> _dummyResumes = List.generate(
+    6,
+    (index) => {
+      'id': 'dummy-$index',
+      'title': 'Resume Title Placeholder',
+      'updated_at': DateTime.now().toIso8601String(),
+    },
+  );
 
   Widget _buildEmptyState() {
     final colorScheme = Theme.of(context).colorScheme;
@@ -420,6 +434,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       final resume = resumes[index];
                       return ResumeCardEnhanced(
                         key: ValueKey(resume['id']),
+                        resumeId: resume['id'],
                         title: resume['title'] ?? 'Untitled',
                         updatedAt: DateTime.parse(resume['updated_at']),
                         onTap: () {
@@ -444,6 +459,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         padding: const EdgeInsets.only(bottom: 16),
                         child: ResumeCardEnhanced(
                           key: ValueKey(resume['id']),
+                          resumeId: resume['id'],
                           title: resume['title'] ?? 'Untitled',
                           updatedAt: DateTime.parse(resume['updated_at']),
                           onTap: () {

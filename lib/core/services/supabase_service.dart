@@ -36,6 +36,8 @@ class SupabaseService {
 
   User? get currentUser => _client.auth.currentUser;
 
+  String? get userProfileImage => currentUser?.userMetadata?['avatar_url'];
+
   Stream<AuthState> get authState => _client.auth.onAuthStateChange;
 
   // Resume Operations
