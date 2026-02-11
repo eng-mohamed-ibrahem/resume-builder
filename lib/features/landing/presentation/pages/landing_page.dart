@@ -20,20 +20,7 @@ class LandingPage extends StatefulWidget {
 
 class _LandingPageState extends State<LandingPage> {
   final GlobalKey _featuresKey = GlobalKey();
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    // Simulate a premium loading/entry effect
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    });
-  }
+  final bool _isLoading = false;
 
   void _scrollToFeatures() {
     final context = _featuresKey.currentContext;
