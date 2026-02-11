@@ -157,10 +157,7 @@ class _EducationCard extends StatelessWidget {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        colorScheme.tertiary,
-                        colorScheme.secondary,
-                      ],
+                      colors: [colorScheme.tertiary, colorScheme.secondary],
                     ),
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -191,7 +188,7 @@ class _EducationCard extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Content
           Padding(
             padding: const EdgeInsets.all(16),
@@ -311,9 +308,7 @@ class _ModernFieldState extends State<_ModernField> {
       controller: _controller,
       onChanged: widget.onChanged,
       maxLines: widget.maxLines,
-      style: theme.textTheme.bodyMedium?.copyWith(
-        fontWeight: FontWeight.w500,
-      ),
+      style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,

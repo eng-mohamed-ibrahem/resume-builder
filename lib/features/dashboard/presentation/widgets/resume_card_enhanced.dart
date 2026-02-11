@@ -65,6 +65,11 @@ class _ResumeCardEnhancedState extends State<ResumeCardEnhanced> {
   }
 
   Future<Uint8List?> _generatePreview() async {
+    // Skip preview generation for dummy/placeholder resumes
+    if (widget.resumeId.startsWith('dummy')) {
+      return null;
+    }
+
     try {
       final resume = await SupabaseService().getFullResume(widget.resumeId);
       final pdfBytes = await ExportService.generatePdfBytes(resume, false);

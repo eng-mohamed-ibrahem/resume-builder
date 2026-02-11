@@ -229,9 +229,9 @@ class SupabaseService {
         case 'projects':
           final projects = await _client
               .from('projects')
-              .select('*, project_points(*)')
+              .select('*, project_points(*), project_links(*)')
               .eq('section_id', sectionId)
-              .order('created_at', ascending: false);
+              .order('created_at', ascending: true);
 
           resumeData['projects'] = projects
               .map(
@@ -247,6 +247,16 @@ class SupabaseService {
                   'descriptionPoints':
                       (proj['project_points'] as List<dynamic>?)
                           ?.map((point) => point['point_text'] as String)
+                          .toList() ??
+                      [],
+                  'links':
+                      (proj['project_links'] as List<dynamic>?)
+                          ?.map(
+                            (link) => {
+                              'label': link['label'] ?? '',
+                              'url': link['url'] ?? '',
+                            },
+                          )
                           .toList() ??
                       [],
                 },
@@ -470,6 +480,17 @@ class SupabaseService {
               'project_id': project['id'],
               'point_text': points[i],
               'point_order': i,
+            });
+          }
+
+          // Save project links
+          final links = projData['links'] as List<dynamic>? ?? [];
+          for (final link in links) {
+            final linkData = link as Map<String, dynamic>;
+            await _client.from('project_links').insert({
+              'project_id': project['id'],
+              'label': linkData['label'] ?? '',
+              'url': linkData['url'] ?? '',
             });
           }
         }
@@ -728,9 +749,9 @@ class SupabaseService {
         case SectionType.projects:
           final projects = await _client
               .from('projects')
-              .select('*, project_points(*)')
+              .select('*, project_points(*), project_links(*)')
               .eq('section_id', sectionId)
-              .order('created_at', ascending: false);
+              .order('created_at', ascending: true);
 
           sections.add(
             SectionModel(
@@ -748,18 +769,17 @@ class SupabaseService {
                               ?.map((e) => e.toString())
                               .toList() ??
                           [],
-                      // Warning: ProjectLink mapping missing in getResumeData, assuming simple structure or empty
-                      links: [
-                        if (proj['project_url'] != null &&
-                            proj['project_url'].toString().isNotEmpty)
-                          ProjectLink(
-                            label: 'Project',
-                            url: proj['project_url'],
-                          ),
-                        if (proj['github_url'] != null &&
-                            proj['github_url'].toString().isNotEmpty)
-                          ProjectLink(label: 'GitHub', url: proj['github_url']),
-                      ],
+                      // Load links from project_links table
+                      links:
+                          (proj['project_links'] as List<dynamic>?)
+                              ?.map(
+                                (link) => ProjectLink(
+                                  label: link['label'] ?? '',
+                                  url: link['url'] ?? '',
+                                ),
+                              )
+                              .toList() ??
+                          [],
                       descriptionPoints:
                           (proj['project_points'] as List<dynamic>?)
                               ?.map((point) => point['point_text'] as String)

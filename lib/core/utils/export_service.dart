@@ -1,22 +1,11 @@
-import 'dart:typed_data';
-
+import 'package:arabic_reshaper/arabic_reshaper.dart';
+import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../../features/resume/data/models/resume_models.dart';
 
-/// ATS-Friendly PDF Export Service
-///
-/// This service generates PDFs optimized for Applicant Tracking Systems (ATS):
-/// - Single-column layout (no tables or complex structures)
-/// - Standard fonts (Roboto family)
-/// - Clear section headers in UPPERCASE
-/// - Plain text bullet points with • character
-/// - Metadata for better parsing
-/// - No headers/footers that could confuse ATS
-/// - Contact info as plain text at the top
-/// - Consistent date formatting
 class ExportService {
   static Future<void> exportToPdf(ResumeModel resume, bool isAtsView) async {
     final bytes = await generatePdfBytes(resume, isAtsView);
@@ -30,18 +19,22 @@ class ExportService {
     ResumeModel resume,
     bool isAtsView,
   ) async {
-    // Load fonts with Unicode support
-    final robotoRegular = await PdfGoogleFonts.robotoRegular();
-    final robotoBold = await PdfGoogleFonts.robotoBold();
-    final robotoItalic = await PdfGoogleFonts.robotoItalic();
+    final arabicRegular = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/arial.ttf'),
+    );
+    final arabicBold = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/arial_bold.ttf'),
+    );
+    final arabicItalic = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/arial_italic.ttf'),
+    );
 
     final pdf = pw.Document(
       theme: pw.ThemeData.withFont(
-        base: robotoRegular,
-        bold: robotoBold,
-        italic: robotoItalic,
+        base: arabicRegular,
+        bold: arabicBold,
+        italic: arabicItalic,
       ),
-      // Add metadata for ATS parsing
       title: resume.title.isNotEmpty ? resume.title : 'Resume',
       author: _extractAuthorName(resume),
       subject: 'Professional Resume',
@@ -53,9 +46,6 @@ class ExportService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.symmetric(horizontal: 50, vertical: 40),
-        // No header/footer for ATS compatibility
-        header: null,
-        footer: null,
         build: (context) {
           return resume.sections.map((section) {
             return _buildPdfSection(section);
@@ -67,7 +57,10 @@ class ExportService {
     return await pdf.save();
   }
 
-  /// Extract author name from header section
+  static String _reshapeArabicText(String text) {
+    return ArabicReshaper.instance.reshape(text);
+  }
+
   static String _extractAuthorName(ResumeModel resume) {
     for (final section in resume.sections) {
       if (section.type == SectionType.header && section.headerData != null) {
@@ -77,7 +70,6 @@ class ExportService {
     return 'Job Seeker';
   }
 
-  /// Extract keywords from skills for metadata
   static String _extractKeywords(ResumeModel resume) {
     final keywords = <String>[];
     for (final section in resume.sections) {
@@ -90,7 +82,6 @@ class ExportService {
 
   static pw.Widget _buildPdfSection(SectionModel section) {
     if (!section.isVisible) return pw.SizedBox();
-
     switch (section.type) {
       case SectionType.header:
         return _buildHeader(section.headerData ?? HeaderModel());
@@ -112,7 +103,6 @@ class ExportService {
     }
   }
 
-  /// Build ATS-optimized header with contact info as plain text
   static pw.Widget _buildHeader(HeaderModel data) {
     final contactItems = <String>[];
     if (data.email.isNotEmpty) contactItems.add(data.email);
@@ -127,69 +117,76 @@ class ExportService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
-        // Name - prominent and centered
         pw.Text(
-          data.fullName.toUpperCase(),
+          _reshapeArabicText(data.fullName.toUpperCase()),
           textAlign: pw.TextAlign.center,
           style: pw.TextStyle(
             fontSize: 24,
             fontWeight: pw.FontWeight.bold,
             letterSpacing: 2,
+            lineSpacing: 0.8,
+            height: 0.9,
           ),
         ),
-        pw.SizedBox(height: 4),
-
-        // Job title
+        pw.SizedBox(height: 2),
         if (data.jobTitle.isNotEmpty)
           pw.Text(
-            data.jobTitle,
+            _reshapeArabicText(data.jobTitle),
             textAlign: pw.TextAlign.center,
-            style: const pw.TextStyle(fontSize: 12),
+            style: const pw.TextStyle(
+              fontSize: 12,
+              lineSpacing: 0.8,
+              height: 0.9,
+            ),
           ),
-        pw.SizedBox(height: 8),
-
-        // Contact info - plain text, separated by pipes for ATS
+        pw.SizedBox(height: 4),
         if (contactItems.isNotEmpty)
           pw.Text(
-            contactItems.join('  |  '),
+            contactItems.map((item) => _reshapeArabicText(item)).join('  |  '),
             textAlign: pw.TextAlign.center,
-            style: const pw.TextStyle(fontSize: 10),
+            style: const pw.TextStyle(
+              fontSize: 10,
+              lineSpacing: 0.8,
+              height: 0.9,
+            ),
           ),
-
-        // Links - plain text URLs for ATS parsing
         if (linkItems.isNotEmpty) ...[
-          pw.SizedBox(height: 4),
+          pw.SizedBox(height: 2),
           pw.Text(
-            linkItems.join('  |  '),
+            linkItems.map((item) => _reshapeArabicText(item)).join('  |  '),
             textAlign: pw.TextAlign.center,
-            style: const pw.TextStyle(fontSize: 9),
+            style: const pw.TextStyle(
+              fontSize: 9,
+              lineSpacing: 0.8,
+              height: 0.9,
+            ),
           ),
         ],
-
-        pw.SizedBox(height: 12),
+        pw.SizedBox(height: 4),
         pw.Divider(thickness: 1.5),
-        pw.SizedBox(height: 12),
+        pw.SizedBox(height: 2),
       ],
     );
   }
 
-  /// Build professional summary section
   static pw.Widget _buildSummary(SectionModel section) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         _sectionTitle(section.title),
         pw.Text(
-          section.summaryData ?? '',
-          style: const pw.TextStyle(fontSize: 10, lineSpacing: 1.4),
-          textAlign: pw.TextAlign.justify,
+          _reshapeArabicText(section.summaryData ?? ''),
+          style: const pw.TextStyle(
+            fontSize: 10,
+            lineSpacing: 0.8,
+            height: 0.9,
+          ),
         ),
-        pw.SizedBox(height: 16),
+        pw.SizedBox(height: 2),
       ],
     );
   }
 
-  /// Build work experience section with ATS-friendly bullet points
   static pw.Widget _buildExperience(SectionModel section) {
     final experiences = section.experienceData ?? [];
 
@@ -199,21 +196,22 @@ class ExportService {
         _sectionTitle(section.title),
         ...experiences.map(
           (exp) => pw.Padding(
-            padding: const pw.EdgeInsets.only(bottom: 12),
+            padding: const pw.EdgeInsets.only(bottom: 6),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Role and dates on same line
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Expanded(
                       child: pw.Text(
-                        exp.role,
+                        _reshapeArabicText(exp.role),
                         style: pw.TextStyle(
                           fontWeight: pw.FontWeight.bold,
                           fontSize: 11,
+                          lineSpacing: 0.8,
+                          height: 0.9,
                         ),
                       ),
                     ),
@@ -223,37 +221,47 @@ class ExportService {
                         exp.endDate,
                         exp.isCurrent,
                       ),
-                      style: const pw.TextStyle(fontSize: 10),
+                      style: const pw.TextStyle(
+                        fontSize: 10,
+                        lineSpacing: 0.8,
+                        height: 0.9,
+                      ),
                     ),
                   ],
                 ),
-
-                // Company and location
                 pw.Text(
                   exp.location.isNotEmpty
-                      ? '${exp.company}, ${exp.location}'
-                      : exp.company,
+                      ? '${_reshapeArabicText(exp.company)}, ${_reshapeArabicText(exp.location)}'
+                      : _reshapeArabicText(exp.company),
                   style: pw.TextStyle(
                     fontSize: 10,
                     fontStyle: pw.FontStyle.italic,
+                    lineSpacing: 0.8,
+                    height: 0.9,
                   ),
                 ),
-                pw.SizedBox(height: 4),
-
-                // Bullet points - using • for ATS compatibility
+                pw.SizedBox(height: 2),
                 ...exp.descriptionPoints.map(
                   (point) => pw.Padding(
-                    padding: const pw.EdgeInsets.only(bottom: 2, left: 8),
+                    padding: const pw.EdgeInsets.only(bottom: 1, left: 8),
                     child: pw.Row(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text('• ', style: const pw.TextStyle(fontSize: 10)),
+                        pw.Text(
+                          '• ',
+                          style: const pw.TextStyle(
+                            fontSize: 10,
+                            lineSpacing: 0.8,
+                            height: 0.9,
+                          ),
+                        ),
                         pw.Expanded(
                           child: pw.Text(
-                            point,
+                            _reshapeArabicText(point),
                             style: const pw.TextStyle(
                               fontSize: 10,
-                              lineSpacing: 1.2,
+                              lineSpacing: 0.8,
+                              height: 0.9,
                             ),
                           ),
                         ),
@@ -269,7 +277,6 @@ class ExportService {
     );
   }
 
-  /// Build projects section
   static pw.Widget _buildProjects(SectionModel section) {
     final projects = section.projectData ?? [];
 
@@ -279,74 +286,76 @@ class ExportService {
         _sectionTitle(section.title),
         ...projects.map(
           (proj) => pw.Padding(
-            padding: const pw.EdgeInsets.only(bottom: 10),
+            padding: const pw.EdgeInsets.only(bottom: 6),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Project name
-                pw.Text(
-                  proj.name,
-                  style: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
-                    fontSize: 11,
-                  ),
-                ),
-
-                // Role if present
-                if (proj.role.isNotEmpty)
-                  pw.Text(
-                    proj.role,
-                    style: pw.TextStyle(
-                      fontSize: 10,
-                      fontStyle: pw.FontStyle.italic,
+                // Project name with links
+                pw.Row(
+                  children: [
+                    pw.Text(
+                      _reshapeArabicText(proj.name),
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 11,
+                      ),
                     ),
-                  ),
-
-                // Description
-                if (proj.description.isNotEmpty) ...[
-                  pw.SizedBox(height: 2),
-                  pw.Text(
-                    proj.description,
-                    style: const pw.TextStyle(fontSize: 10),
-                  ),
-                ],
-
-                // Technologies as comma-separated list
-                if (proj.technologies.isNotEmpty) ...[
-                  pw.SizedBox(height: 2),
-                  pw.Text(
-                    'Technologies: ${proj.technologies.join(', ')}',
-                    style: const pw.TextStyle(fontSize: 9),
-                  ),
-                ],
-
-                // Bullet points
-                if (proj.descriptionPoints.isNotEmpty) ...[
-                  pw.SizedBox(height: 4),
-                  ...proj.descriptionPoints.map(
-                    (point) => pw.Padding(
-                      padding: const pw.EdgeInsets.only(bottom: 2, left: 8),
-                      child: pw.Row(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            '• ',
-                            style: const pw.TextStyle(fontSize: 10),
-                          ),
-                          pw.Expanded(
+                    if (proj.links.isNotEmpty) ...[
+                      pw.SizedBox(width: 6),
+                      pw.Text(' - ', style: const pw.TextStyle(fontSize: 10)),
+                      ...proj.links.expand(
+                        (link) => [
+                          if (link != proj.links.first)
+                            pw.Text(
+                              ' | ',
+                              style: const pw.TextStyle(fontSize: 10),
+                            ),
+                          pw.UrlLink(
+                            destination: link.url,
                             child: pw.Text(
-                              point,
+                              link.label.isNotEmpty ? link.label : 'Link',
                               style: const pw.TextStyle(
                                 fontSize: 10,
-                                lineSpacing: 1.2,
+                                decoration: pw.TextDecoration.underline,
+                                color: PdfColors.blue700,
                               ),
                             ),
                           ),
                         ],
                       ),
+                    ],
+                  ],
+                ),
+
+                // Role if present
+                if (proj.role.isNotEmpty)
+                  pw.Text(
+                    _reshapeArabicText(proj.role),
+                    style: pw.TextStyle(
+                      fontSize: 10,
+                      fontStyle: pw.FontStyle.italic,
+                      lineSpacing: 0.8,
+                      height: 0.9,
                     ),
                   ),
-                ],
+                if (proj.description.isNotEmpty)
+                  pw.Text(
+                    _reshapeArabicText(proj.description),
+                    style: const pw.TextStyle(
+                      fontSize: 10,
+                      lineSpacing: 0.8,
+                      height: 0.9,
+                    ),
+                  ),
+                if (proj.technologies.isNotEmpty)
+                  pw.Text(
+                    'Technologies: ${proj.technologies.map((tech) => _reshapeArabicText(tech)).join(', ')}',
+                    style: const pw.TextStyle(
+                      fontSize: 9,
+                      lineSpacing: 0.8,
+                      height: 0.9,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -355,7 +364,6 @@ class ExportService {
     );
   }
 
-  /// Build education section
   static pw.Widget _buildEducation(SectionModel section) {
     final education = section.educationData ?? [];
 
@@ -365,7 +373,7 @@ class ExportService {
         _sectionTitle(section.title),
         ...education.map(
           (edu) => pw.Padding(
-            padding: const pw.EdgeInsets.only(bottom: 8),
+            padding: const pw.EdgeInsets.only(bottom: 4),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
@@ -374,38 +382,37 @@ class ExportService {
                   children: [
                     pw.Expanded(
                       child: pw.Text(
-                        edu.degree.isNotEmpty
-                            ? '${edu.degree}${edu.fieldOfStudy.isNotEmpty ? ' in ${edu.fieldOfStudy}' : ''}'
-                            : edu.fieldOfStudy,
+                        _reshapeArabicText(
+                          edu.degree.isNotEmpty
+                              ? '${edu.degree}${edu.fieldOfStudy.isNotEmpty ? ' in ${edu.fieldOfStudy}' : ''}'
+                              : edu.fieldOfStudy,
+                        ),
                         style: pw.TextStyle(
                           fontWeight: pw.FontWeight.bold,
                           fontSize: 11,
+                          lineSpacing: 0.8,
+                          height: 0.9,
                         ),
                       ),
                     ),
                     pw.Text(
                       _formatDateRange(edu.startDate, edu.endDate, false),
-                      style: const pw.TextStyle(fontSize: 10),
+                      style: const pw.TextStyle(
+                        fontSize: 10,
+                        lineSpacing: 0.8,
+                        height: 0.9,
+                      ),
                     ),
                   ],
                 ),
                 pw.Text(
-                  edu.institution,
-                  style: const pw.TextStyle(fontSize: 10),
+                  _reshapeArabicText(edu.institution),
+                  style: const pw.TextStyle(
+                    fontSize: 10,
+                    lineSpacing: 0.8,
+                    height: 0.9,
+                  ),
                 ),
-                if (edu.gpa.isNotEmpty)
-                  pw.Text(
-                    'GPA: ${edu.gpa}',
-                    style: const pw.TextStyle(fontSize: 9),
-                  ),
-                if (edu.description.isNotEmpty)
-                  pw.Padding(
-                    padding: const pw.EdgeInsets.only(top: 2),
-                    child: pw.Text(
-                      edu.description,
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -414,11 +421,8 @@ class ExportService {
     );
   }
 
-  /// Build skills section - comma-separated for ATS parsing
   static pw.Widget _buildSkills(SectionModel section) {
     final skills = section.skillData ?? [];
-
-    // Group skills by level if levels are provided
     final skillNames = skills
         .map((s) => s.name)
         .where((n) => n.isNotEmpty)
@@ -429,15 +433,17 @@ class ExportService {
       children: [
         _sectionTitle(section.title),
         pw.Text(
-          skillNames.join('  •  '),
-          style: const pw.TextStyle(fontSize: 10, lineSpacing: 1.3),
+          skillNames.map((skill) => _reshapeArabicText(skill)).join('  •  '),
+          style: const pw.TextStyle(
+            fontSize: 10,
+            lineSpacing: 0.8,
+            height: 0.9,
+          ),
         ),
-        pw.SizedBox(height: 16),
       ],
     );
   }
 
-  /// Build generic list section (certifications, languages)
   static pw.Widget _buildListSection(SectionModel section) {
     final items = section.listData ?? [];
 
@@ -446,34 +452,37 @@ class ExportService {
       children: [
         _sectionTitle(section.title),
         pw.Text(
-          items.join('  •  '),
-          style: const pw.TextStyle(fontSize: 10, lineSpacing: 1.3),
+          items.map((item) => _reshapeArabicText(item)).join('  •  '),
+          style: const pw.TextStyle(
+            fontSize: 10,
+            lineSpacing: 0.8,
+            height: 0.9,
+          ),
         ),
-        pw.SizedBox(height: 16),
       ],
     );
   }
 
-  /// Build section title with UPPERCASE for ATS readability
   static pw.Widget _sectionTitle(String title) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
-          title.toUpperCase(),
+          _reshapeArabicText(title.toUpperCase()),
           style: pw.TextStyle(
             fontWeight: pw.FontWeight.bold,
             fontSize: 12,
             letterSpacing: 1,
+            lineSpacing: 0.8,
+            height: 0.9,
           ),
         ),
-        pw.Divider(thickness: 1),
-        pw.SizedBox(height: 6),
+        pw.Divider(thickness: 1, height: 2),
+        pw.SizedBox(height: 3),
       ],
     );
   }
 
-  /// Format date range consistently for ATS
   static String _formatDateRange(String start, String end, bool isCurrent) {
     if (start.isEmpty && end.isEmpty) return '';
     if (isCurrent || end.toLowerCase() == 'present') {

@@ -65,6 +65,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.4"
+  arabic_reshaper:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: HEAD
+      resolved-ref: baaa5691b7a08da8409e6b79e28bfbd5c0f63395
+      url: "https://github.com/eng-mohamed-ibrahem/arabic_reshaper.git"
+    source: git
+    version: "0.0.1"
   archive:
     dependency: "direct main"
     description:
@@ -363,11 +372,27 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_to_pdf:
+    dependency: "direct main"
+    description:
+      name: flutter_to_pdf
+      sha256: beaa0840b670c201f49ed0a8ca2e5a889b6cc5221a5330cd7bc2d4e312fddf01
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.1"
   flutter_web_plugins:
     dependency: transitive
     description: flutter
     source: sdk
     version: "0.0.0"
+  font_awesome_flutter:
+    dependency: "direct main"
+    description:
+      name: font_awesome_flutter
+      sha256: b9011df3a1fa02993630b8fb83526368cf2206a711259830325bab2f1d2a4eb0
+      url: "https://pub.dev"
+    source: hosted
+    version: "10.12.0"
   functions_client:
     dependency: transitive
     description:

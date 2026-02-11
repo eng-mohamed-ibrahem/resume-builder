@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
@@ -56,30 +54,10 @@ class ProjectEditor extends StatelessWidget {
             ),
           )
         else
-          ReorderableListView.builder(
+          ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: projects.length,
-            onReorder: (oldIndex, newIndex) =>
-                _onReorder(context, oldIndex, newIndex),
-            proxyDecorator: (child, index, animation) {
-              return AnimatedBuilder(
-                animation: animation,
-                builder: (BuildContext context, Widget? child) {
-                  final double animValue = Curves.easeInOut.transform(
-                    animation.value,
-                  );
-                  final double elevation = lerpDouble(0, 6, animValue)!;
-                  return Material(
-                    elevation: elevation,
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(16),
-                    child: child,
-                  );
-                },
-                child: child,
-              );
-            },
             itemBuilder: (context, index) {
               final proj = projects[index];
               return _ProjectCard(
@@ -114,16 +92,6 @@ class ProjectEditor extends StatelessWidget {
     );
   }
 
-  void _onReorder(BuildContext context, int oldIndex, int newIndex) {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-    final current = List<ProjectModel>.from(section.projectData ?? []);
-    final item = current.removeAt(oldIndex);
-    current.insert(newIndex, item);
-    context.read<ResumeCubit>().updateProjects(section.id, current);
-  }
-
   void _updateProj(BuildContext context, int index, ProjectModel updated) {
     final current = List<ProjectModel>.from(section.projectData ?? []);
     current[index] = updated;
@@ -143,7 +111,7 @@ class ProjectEditor extends StatelessWidget {
   }
 }
 
-class _ProjectCard extends StatelessWidget {
+class _ProjectCard extends StatefulWidget {
   final ProjectModel project;
   final int index;
   final Function(ProjectModel) onUpdate;
@@ -156,6 +124,13 @@ class _ProjectCard extends StatelessWidget {
     required this.onUpdate,
     required this.onRemove,
   }) : super(key: key);
+
+  @override
+  State<_ProjectCard> createState() => _ProjectCardState();
+}
+
+class _ProjectCardState extends State<_ProjectCard> {
+  bool _isExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -181,102 +156,106 @@ class _ProjectCard extends StatelessWidget {
       child: Column(
         children: [
           // Header
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: colorScheme.secondaryContainer.withValues(alpha: 0.3),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
+          InkWell(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            borderRadius: BorderRadius.vertical(
+              top: const Radius.circular(16),
+              bottom: Radius.circular(_isExpanded ? 0 : 16),
             ),
-            child: Row(
-              children: [
-                // Drag Handle
-                ReorderableDragStartListener(
-                  index: index,
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.grab,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: colorScheme.outline.withValues(alpha: 0.1),
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.drag_indicator_rounded,
-                        color: colorScheme.onSurfaceVariant,
-                        size: 20,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.secondaryContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.vertical(
+                  top: const Radius.circular(16),
+                  bottom: Radius.circular(_isExpanded ? 0 : 16),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.project.name.isNotEmpty
+                          ? widget.project.name
+                          : 'New Project ${widget.index + 1}',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    project.name.isNotEmpty
-                        ? project.name
-                        : 'New Project ${index + 1}',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+                  Icon(
+                    _isExpanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: widget.onRemove,
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      color: colorScheme.error,
                     ),
+                    tooltip: 'Remove',
                   ),
-                ),
-                IconButton(
-                  onPressed: onRemove,
-                  icon: Icon(
-                    Icons.delete_outline_rounded,
-                    color: colorScheme.error,
-                  ),
-                  tooltip: 'Remove',
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
           // Content
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _ModernField(
-                  label: 'Project Name',
-                  icon: Icons.title_rounded,
-                  value: project.name,
-                  onChanged: (val) => onUpdate(project.copyWith(name: val)),
-                  hint: 'E-commerce Mobile App',
-                ),
-                const SizedBox(height: 12),
-                _ModernField(
-                  label: 'Short Description',
-                  icon: Icons.description_rounded,
-                  value: project.description,
-                  onChanged: (val) =>
-                      onUpdate(project.copyWith(description: val)),
-                  hint: 'A full-stack mobile shopping application...',
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 20),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: _isExpanded
+                ? Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        _ModernField(
+                          label: 'Project Name',
+                          icon: Icons.title_rounded,
+                          value: widget.project.name,
+                          onChanged: (val) => widget.onUpdate(
+                            widget.project.copyWith(name: val),
+                          ),
+                          hint: 'E-commerce Mobile App',
+                        ),
+                        const SizedBox(height: 12),
+                        _ModernField(
+                          label: 'Short Description',
+                          icon: Icons.description_rounded,
+                          value: widget.project.description,
+                          onChanged: (val) => widget.onUpdate(
+                            widget.project.copyWith(description: val),
+                          ),
+                          hint: 'A full-stack mobile shopping application...',
+                          maxLines: 2,
+                        ),
+                        const SizedBox(height: 20),
 
-                // Description Points
-                _DetailPointsSection(
-                  points: project.descriptionPoints,
-                  onUpdate: (points) =>
-                      onUpdate(project.copyWith(descriptionPoints: points)),
-                ),
+                        // Description Points
+                        _DetailPointsSection(
+                          points: widget.project.descriptionPoints,
+                          onUpdate: (points) => widget.onUpdate(
+                            widget.project.copyWith(descriptionPoints: points),
+                          ),
+                        ),
 
-                const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                // Links Section
-                _LinksSection(
-                  links: project.links,
-                  onUpdate: (links) => onUpdate(project.copyWith(links: links)),
-                ),
-              ],
-            ),
+                        // Links Section
+                        _LinksSection(
+                          links: widget.project.links,
+                          onUpdate: (links) => widget.onUpdate(
+                            widget.project.copyWith(links: links),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox(width: double.infinity),
           ),
         ],
       ),

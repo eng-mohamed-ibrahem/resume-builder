@@ -97,7 +97,7 @@ class _AtsSection extends StatelessWidget {
                   if (d.website.isNotEmpty) d.website,
                 ].join(' | '),
               ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
           ],
         );
       case SectionType.summary:
@@ -106,7 +106,7 @@ class _AtsSection extends StatelessWidget {
           children: [
             _sectionTitle(section.title),
             Text(section.summaryData ?? ''),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
           ],
         );
       case SectionType.workExperience:
@@ -262,9 +262,9 @@ class _StandardSection extends StatelessWidget {
                 if (d.github.isNotEmpty) _contactItem(Icons.code, d.github),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             const Divider(height: 1, thickness: 2, color: Colors.black),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
           ],
         );
       case SectionType.summary:
@@ -381,7 +381,7 @@ class _StandardSection extends StatelessWidget {
                         if (proj.links.isNotEmpty)
                           Expanded(
                             child: Text(
-                              ' - ${proj.links.map((l) => l.label).join(" | ")}',
+                              ' - ${proj.links.map((l) => l.label).join(' | ')}',
                               style: TextStyle(
                                 color: Colors.blue.shade800,
                                 fontSize: 13,

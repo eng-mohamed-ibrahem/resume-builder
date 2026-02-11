@@ -30,104 +30,52 @@ class _ModernSectionCardState extends State<ModernSectionCard>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
 
-  late final AnimationController _dragAnim;
-  late final Animation<double> _elevation;
-  late final Animation<double> _tilt;
-
-  @override
-  void initState() {
-    super.initState();
-    _dragAnim = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
-    _elevation = Tween<double>(
-      begin: 0,
-      end: 12,
-    ).animate(CurvedAnimation(parent: _dragAnim, curve: Curves.easeOutCubic));
-    _tilt = Tween<double>(
-      begin: 0,
-      end: 0.035,
-    ).animate(CurvedAnimation(parent: _dragAnim, curve: Curves.easeOutCubic));
-  }
-
-  @override
-  void dispose() {
-    _dragAnim.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return ReorderableDelayedDragStartListener(
-      index: widget.index,
-      child: AnimatedBuilder(
-        animation: _dragAnim,
-        builder: (_, child) {
-          return Transform(
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.001)
-              ..rotateZ(_tilt.value),
-            alignment: Alignment.center,
-            child: Material(
-              elevation: _elevation.value,
-              borderRadius: BorderRadius.circular(12),
-              color: Colors.transparent,
-              child: child,
-            ),
-          );
-        },
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.15),
-              width: 1,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          shape: const Border(),
+          collapsedShape: const Border(),
+          onExpansionChanged: (expanded) =>
+              setState(() => _isExpanded = expanded),
+          leading: _sectionLeadingIcon(colorScheme),
+          title: Text(
+            widget.section.title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
             ),
           ),
-          child: Theme(
-            data: theme.copyWith(dividerColor: Colors.transparent),
-            child: ExpansionTile(
-              shape: const Border(),
-              collapsedShape: const Border(),
-              onExpansionChanged: (expanded) =>
-                  setState(() => _isExpanded = expanded),
-              leading: _sectionLeadingIcon(colorScheme),
-              title: Text(
-                widget.section.title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              trailing: _trailingRow(colorScheme, theme),
-              tilePadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 0,
-              ),
-              childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(
-                        color: colorScheme.outlineVariant.withValues(
-                          alpha: 0.1,
-                        ),
-                      ),
-                    ),
+          trailing: _trailingRow(colorScheme, theme),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.1),
                   ),
-                  padding: const EdgeInsets.only(top: 16),
-                  child: _buildSectionEditor(context, widget.section),
                 ),
-              ],
+              ),
+              padding: const EdgeInsets.only(top: 16),
+              child: _buildSectionEditor(context, widget.section),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -152,13 +100,6 @@ class _ModernSectionCardState extends State<ModernSectionCard>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: _isExpanded
-              ? const Icon(Icons.drag_handle_rounded, key: ValueKey('drag'))
-              : const SizedBox(width: 24, key: ValueKey('empty')),
-        ),
-        const SizedBox(width: 8),
         if (_isExpanded)
           Material(
             color: Colors.transparent,
