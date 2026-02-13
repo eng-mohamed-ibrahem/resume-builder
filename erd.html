@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResuMate - ATS Resume Builder ERD</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', 'Menlo', 'Monaco', monospace;
+      background: #1c1c1c;
+      color: #e0e0e0;
+      min-height: 100vh;
+      overflow: auto;
+    }
+
+    .canvas {
+      position: relative;
+      width: 2200px;
+      height: 1350px;
+      margin: 0 auto;
+    }
+
+    /* SVG connector layer */
+    .connectors-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Table card */
+    .tbl {
+      position: absolute;
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      min-width: 200px;
+      z-index: 1;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+      font-size: 12px;
+    }
+
+    .tbl-header {
+      padding: 8px 12px;
+      font-weight: 600;
+      font-size: 12px;
+      color: #e0e0e0;
+      border-bottom: 1px solid #3a3a3a;
+      background: #333;
+      border-radius: 6px 6px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tbl-header .icon {
+      width: 14px;
+      height: 14px;
+      background: #4a4a4a;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      color: #999;
+    }
+
+    .tbl-body {
+      padding: 4px 0;
+    }
+
+    .tbl-row {
+      display: flex;
+      align-items: center;
+      padding: 4px 12px;
+      gap: 8px;
+      min-height: 26px;
+    }
+
+    .tbl-row:hover {
+      background: #333;
+    }
+
+    /* Column icons */
+    .col-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .icon-pk {
+      background: #3ecf8e33;
+      color: #3ecf8e;
+      border: 1px solid #3ecf8e55;
+    }
+
+    .icon-fk {
+      background: #f0c74033;
+      color: #f0c740;
+      border: 1px solid #f0c74055;
+    }
+
+    .icon-col {
+      background: transparent;
+      color: #666;
+    }
+
+    .icon-nullable {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      border: 1.5px solid #666;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .icon-notnull {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #3ecf8e;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .col-name {
+      flex: 1;
+      color: #c8c8c8;
+      font-size: 11.5px;
+      white-space: nowrap;
+    }
+
+    .col-type {
+      color: #666;
+      font-size: 10.5px;
+      white-space: nowrap;
+      margin-left: auto;
+      padding-right: 4px;
+    }
+
+    /* Connector line styles */
+    .conn-line {
+      stroke: #4a4a4a;
+      stroke-width: 1.5;
+      fill: none;
+    }
+
+    .conn-dot {
+      fill: #4a4a4a;
+    }
+
+    /* FK dot */
+    .fk-dot {
+      fill: #f0c740;
+      stroke: none;
+    }
+
+    /* Footer legend */
+    .legend-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #2a2a2a;
+      border-top: 1px solid #3a3a3a;
+      padding: 10px 30px;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      z-index: 10;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-pk {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      background: #3ecf8e33;
+      border: 1px solid #3ecf8e55;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7px;
+      color: #3ecf8e;
+      font-weight: 700;
+    }
+
+    .legend-id {
+      color: #888;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .legend-unique {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      background: #6366f133;
+      border: 1px solid #6366f155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7px;
+      color: #818cf8;
+      font-weight: 700;
+    }
+
+    .dot-nullable {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1.5px solid #666;
+    }
+
+    .dot-notnull {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3ecf8e;
+    }
+
+    /* Title */
+    .title-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #1c1c1c;
+      border-bottom: 1px solid #3a3a3a;
+      padding: 12px 30px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .title-bar h1 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #e0e0e0;
+      letter-spacing: -0.3px;
+    }
+
+    .title-bar .badge {
+      background: #3ecf8e;
+      color: #1c1c1c;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .title-bar .schema {
+      color: #666;
+      font-size: 12px;
+      margin-left: auto;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Title Bar -->
+  <div class="title-bar">
+    <h1>ResuMate - Database Schema</h1>
+    <span class="badge">Production</span>
+    <span class="schema">schema: public</span>
+  </div>
+
+  <div class="canvas" style="margin-top: 50px; margin-bottom: 50px;">
+
+    <!-- SVG Connectors -->
+    <svg class="connectors-svg" viewBox="0 0 2200 1350">
+      <!-- profiles → resumes -->
+      <path d="M 1870,145 L 1870,180 Q 1870,195 1855,195 L 1155,195 Q 1140,195 1140,210 L 1140,230" class="conn-line" />
+      <circle cx="1140" cy="232" r="3" class="conn-dot" />
+
+      <!-- resumes → resume_sections -->
+      <path d="M 1070,440 L 1070,470 Q 1070,485 1055,485 L 870,485 Q 855,485 855,500 L 855,520" class="conn-line" />
+      <circle cx="855" cy="522" r="3" class="conn-dot" />
+
+      <!-- resumes → resume_shares -->
+      <path d="M 1140,440 L 1140,470 Q 1140,485 1155,485 L 1310,485 Q 1325,485 1325,500 L 1325,520" class="conn-line" />
+      <circle cx="1325" cy="522" r="3" class="conn-dot" />
+
+      <!-- resume_sections → header_sections -->
+      <path d="M 780,750 L 780,780 Q 780,795 765,795 L 180,795 Q 165,795 165,810 L 165,830" class="conn-line" />
+      <circle cx="165" cy="832" r="3" class="conn-dot" />
+
+      <!-- resume_sections → summary_sections -->
+      <path d="M 810,750 L 810,780 Q 810,795 810,800 L 420,800 Q 405,800 405,810 L 405,830" class="conn-line" />
+      <circle cx="405" cy="832" r="3" class="conn-dot" />
+
+      <!-- resume_sections → work_experiences -->
+      <path d="M 840,750 L 840,790 Q 840,800 840,810 L 630,810 Q 620,810 620,820 L 620,830" class="conn-line" />
+      <circle cx="620" cy="832" r="3" class="conn-dot" />
+
+      <!-- resume_sections → education_entries -->
+      <path d="M 860,750 L 860,800 L 860,830" class="conn-line" />
+      <circle cx="860" cy="832" r="3" class="conn-dot" />
+
+      <!-- resume_sections → skills -->
+      <path d="M 880,750 L 880,790 Q 880,800 895,800 L 1080,800 Q 1095,800 1095,810 L 1095,830" class="conn-line" />
+      <circle cx="1095" cy="832" r="3" class="conn-dot" />
+
+      <!-- resume_sections → projects -->
+      <path d="M 900,750 L 900,790 Q 900,800 915,800 L 1310,800 Q 1325,800 1325,810 L 1325,830" class="conn-line" />
+      <circle cx="1325" cy="832" r="3" class="conn-dot" />
+
+      <!-- resume_sections → certifications -->
+      <path d="M 920,750 L 920,790 Q 920,800 935,800 L 1555,800 Q 1570,800 1570,810 L 1570,830" class="conn-line" />
+      <circle cx="1570" cy="832" r="3" class="conn-dot" />
+
+      <!-- resume_sections → languages -->
+      <path d="M 940,750 L 940,790 Q 940,800 955,800 L 1790,800 Q 1805,800 1805,810 L 1805,830" class="conn-line" />
+      <circle cx="1805" cy="832" r="3" class="conn-dot" />
+
+      <!-- resume_sections → custom_sections -->
+      <path d="M 960,750 L 960,790 Q 960,800 975,800 L 2020,800 Q 2035,800 2035,810 L 2035,830" class="conn-line" />
+      <circle cx="2035" cy="832" r="3" class="conn-dot" />
+
+      <!-- work_experiences → experience_points -->
+      <path d="M 620,1070 L 620,1100 L 300,1100 Q 285,1100 285,1115 L 285,1130" class="conn-line" />
+      <circle cx="285" cy="1132" r="3" class="conn-dot" />
+
+      <!-- projects → project_points -->
+      <path d="M 1300,1120 L 1300,1145 Q 1300,1155 1285,1155 L 1100,1155 Q 1085,1155 1085,1165 L 1085,1180"
+        class="conn-line" />
+      <circle cx="1085" cy="1182" r="3" class="conn-dot" />
+
+      <!-- projects → project_links -->
+      <path d="M 1350,1120 L 1350,1145 Q 1350,1155 1365,1155 L 1530,1155 Q 1545,1155 1545,1165 L 1545,1180"
+        class="conn-line" />
+      <circle cx="1545" cy="1182" r="3" class="conn-dot" />
+    </svg>
+
+    <!-- ==================== TABLES ==================== -->
+
+    <!-- profiles -->
+    <div class="tbl" style="left: 1770px; top: 20px; width: 210px;">
+      <div class="tbl-header"><span class="icon">T</span>profiles</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">email</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">full_name</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">avatar_url</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">created_at</span><span
+            class="col-type">timestamptz</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">updated_at</span><span
+            class="col-type">timestamptz</span><span class="icon-notnull"></span></div>
+      </div>
+    </div>
+
+    <!-- resumes -->
+    <div class="tbl" style="left: 1040px; top: 230px; width: 220px;">
+      <div class="tbl-header"><span class="icon">T</span>resumes</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">user_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">title</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">template_name</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">is_public</span><span
+            class="col-type">boolean</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">is_favorite</span><span
+            class="col-type">boolean</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">created_at</span><span
+            class="col-type">timestamptz</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">updated_at</span><span
+            class="col-type">timestamptz</span><span class="icon-notnull"></span></div>
+      </div>
+    </div>
+
+    <!-- resume_sections -->
+    <div class="tbl" style="left: 750px; top: 520px; width: 230px;">
+      <div class="tbl-header"><span class="icon">T</span>resume_sections</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">resume_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">section_type</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">section_title</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">section_order</span><span
+            class="col-type">integer</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">created_at</span><span
+            class="col-type">timestamptz</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">updated_at</span><span
+            class="col-type">timestamptz</span><span class="icon-notnull"></span></div>
+      </div>
+    </div>
+
+    <!-- resume_shares -->
+    <div class="tbl" style="left: 1230px; top: 520px; width: 210px;">
+      <div class="tbl-header"><span class="icon">T</span>resume_shares</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">resume_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">share_token</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">is_public</span><span
+            class="col-type">boolean</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">expires_at</span><span
+            class="col-type">timestamptz</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">view_count</span><span
+            class="col-type">integer</span><span class="icon-nullable"></span></div>
+      </div>
+    </div>
+
+    <!-- header_sections -->
+    <div class="tbl" style="left: 30px; top: 830px; width: 210px;">
+      <div class="tbl-header"><span class="icon">T</span>header_sections</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">section_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">full_name</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">email</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">phone_number</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">location</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">website</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">linkedin</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">github</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+      </div>
+    </div>
+
+    <!-- summary_sections -->
+    <div class="tbl" style="left: 280px; top: 830px; width: 200px;">
+      <div class="tbl-header"><span class="icon">T</span>summary_sections</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">section_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">content</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+      </div>
+    </div>
+
+    <!-- work_experiences -->
+    <div class="tbl" style="left: 510px; top: 830px; width: 210px;">
+      <div class="tbl-header"><span class="icon">T</span>work_experiences</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">section_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">company</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">role</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">start_date</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">end_date</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">location</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">description</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+      </div>
+    </div>
+
+    <!-- education_entries -->
+    <div class="tbl" style="left: 750px; top: 830px; width: 210px;">
+      <div class="tbl-header"><span class="icon">T</span>education_entries</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">section_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">institution</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">degree</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">field_of_study</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">start_date</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">end_date</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">gpa</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">description</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+      </div>
+    </div>
+
+    <!-- skills -->
+    <div class="tbl" style="left: 990px; top: 830px; width: 200px;">
+      <div class="tbl-header"><span class="icon">T</span>skills</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">section_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">name</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">skill_level</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">category</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+      </div>
+    </div>
+
+    <!-- projects -->
+    <div class="tbl" style="left: 1220px; top: 830px; width: 220px;">
+      <div class="tbl-header"><span class="icon">T</span>projects</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">section_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">name</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">description</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">technologies</span><span
+            class="col-type">text[]</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">project_url</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">github_url</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">start_date</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">end_date</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">created_at</span><span
+            class="col-type">timestamptz</span><span class="icon-notnull"></span></div>
+      </div>
+    </div>
+
+    <!-- certifications -->
+    <div class="tbl" style="left: 1470px; top: 830px; width: 210px;">
+      <div class="tbl-header"><span class="icon">T</span>certifications</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">section_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">name</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">issuer</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">issue_date</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">expiry_date</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">credential_id</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">credential_url</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+      </div>
+    </div>
+
+    <!-- languages -->
+    <div class="tbl" style="left: 1710px; top: 830px; width: 200px;">
+      <div class="tbl-header"><span class="icon">T</span>languages</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">section_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">name</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">proficiency</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+      </div>
+    </div>
+
+    <!-- custom_sections -->
+    <div class="tbl" style="left: 1940px; top: 830px; width: 200px;">
+      <div class="tbl-header"><span class="icon">T</span>custom_sections</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">section_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">content</span><span
+            class="col-type">text</span><span class="icon-nullable"></span></div>
+      </div>
+    </div>
+
+    <!-- experience_points -->
+    <div class="tbl" style="left: 170px; top: 1130px; width: 220px;">
+      <div class="tbl-header"><span class="icon">T</span>experience_points</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">experience_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">point_text</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">point_order</span><span
+            class="col-type">integer</span><span class="icon-notnull"></span></div>
+      </div>
+    </div>
+
+    <!-- project_points -->
+    <div class="tbl" style="left: 980px; top: 1180px; width: 210px;">
+      <div class="tbl-header"><span class="icon">T</span>project_points</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">project_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">point_text</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">point_order</span><span
+            class="col-type">integer</span><span class="icon-notnull"></span></div>
+      </div>
+    </div>
+
+    <!-- project_links -->
+    <div class="tbl" style="left: 1430px; top: 1180px; width: 220px;">
+      <div class="tbl-header"><span class="icon">T</span>project_links</div>
+      <div class="tbl-body">
+        <div class="tbl-row"><span class="col-icon icon-pk">PK</span><span class="col-name">id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-fk">FK</span><span class="col-name">project_id</span><span
+            class="col-type">uuid</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">label</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">url</span><span
+            class="col-type">text</span><span class="icon-notnull"></span></div>
+        <div class="tbl-row"><span class="col-icon icon-col"></span><span class="col-name">link_order</span><span
+            class="col-type">integer</span><span class="icon-notnull"></span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer Legend -->
+  <div class="legend-bar">
+    <div class="legend-item"><span class="legend-pk">PK</span> Primary key</div>
+    <div class="legend-item"><span class="legend-id">#</span> Identity</div>
+    <div class="legend-item"><svg width="14" height="14">
+        <circle cx="7" cy="7" r="5" fill="none" stroke="#818cf8" stroke-width="1.5" /><text x="7" y="10.5"
+          text-anchor="middle" font-size="7" fill="#818cf8" font-weight="700">U</text>
+      </svg> Unique</div>
+    <div class="legend-item"><span class="dot-nullable"></span> Nullable</div>
+    <div class="legend-item"><span class="dot-notnull"></span> Non-Nullable</div>
+  </div>
+
+</body>
+
+</html>
