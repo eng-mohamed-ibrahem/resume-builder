@@ -133,6 +133,17 @@ CREATE TABLE IF NOT EXISTS project_points (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 
+-- Project links
+CREATE TABLE IF NOT EXISTS project_links (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
+  label TEXT NOT NULL,
+  url TEXT NOT NULL,
+  link_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
 -- Certifications
 CREATE TABLE IF NOT EXISTS certifications (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -186,6 +197,7 @@ CREATE INDEX IF NOT EXISTS idx_education_entries_section_id ON education_entries
 CREATE INDEX IF NOT EXISTS idx_skills_section_id ON skills(section_id);
 CREATE INDEX IF NOT EXISTS idx_projects_section_id ON projects(section_id);
 CREATE INDEX IF NOT EXISTS idx_project_points_project_id ON project_points(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_links_project_id ON project_links(project_id);
 CREATE INDEX IF NOT EXISTS idx_certifications_section_id ON certifications(section_id);
 CREATE INDEX IF NOT EXISTS idx_languages_section_id ON languages(section_id);
 CREATE INDEX IF NOT EXISTS idx_resume_shares_token ON resume_shares(share_token);
@@ -203,6 +215,7 @@ ALTER TABLE education_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE skills ENABLE ROW LEVEL SECURITY;
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_points ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE certifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE languages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE custom_sections ENABLE ROW LEVEL SECURITY;
@@ -293,6 +306,55 @@ CREATE POLICY "Users can manage own project points" ON project_points FOR ALL US
   EXISTS (SELECT 1 FROM projects p JOIN resume_sections rs ON rs.id = p.section_id JOIN resumes r ON r.id = rs.resume_id WHERE p.id = project_id AND r.user_id = auth.uid())
 );
 
+-- Project links policies
+CREATE POLICY "Users can view own project links" ON project_links
+  FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM projects p
+      JOIN resume_sections rs ON p.section_id = rs.id
+      JOIN resumes r ON rs.resume_id = r.id
+      WHERE p.id = project_links.project_id
+      AND r.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can insert own project links" ON project_links
+  FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM projects p
+      JOIN resume_sections rs ON p.section_id = rs.id
+      JOIN resumes r ON rs.resume_id = r.id
+      WHERE p.id = project_links.project_id
+      AND r.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can update own project links" ON project_links
+  FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM projects p
+      JOIN resume_sections rs ON p.section_id = rs.id
+      JOIN resumes r ON rs.resume_id = r.id
+      WHERE p.id = project_links.project_id
+      AND r.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can delete own project links" ON project_links
+  FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM projects p
+      JOIN resume_sections rs ON p.section_id = rs.id
+      JOIN resumes r ON rs.resume_id = r.id
+      WHERE p.id = project_links.project_id
+      AND r.user_id = auth.uid()
+    )
+  );
+
 CREATE POLICY "Users can view own certifications" ON certifications FOR SELECT USING (
   EXISTS (SELECT 1 FROM resume_sections rs JOIN resumes r ON r.id = rs.resume_id WHERE rs.id = section_id AND r.user_id = auth.uid())
 );
@@ -342,6 +404,7 @@ CREATE TRIGGER update_work_experiences_updated_at BEFORE UPDATE ON work_experien
 CREATE TRIGGER update_education_entries_updated_at BEFORE UPDATE ON education_entries FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_skills_updated_at BEFORE UPDATE ON skills FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_project_links_updated_at BEFORE UPDATE ON project_links FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_certifications_updated_at BEFORE UPDATE ON certifications FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_languages_updated_at BEFORE UPDATE ON languages FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_custom_sections_updated_at BEFORE UPDATE ON custom_sections FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

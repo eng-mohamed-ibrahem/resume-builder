@@ -100,6 +100,11 @@ For a detailed guide on setting up the backend, please refer to the [Supabase In
 - Authentication configuration
 - RLS Policies
 
+## 🗂️ Database ERD
+```markdown
+[View the Database Entity Relationship Diagram (ERD)](https://eng-mohamed-ibrahem.github.io/resume-builder/erd.html)
+```
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
